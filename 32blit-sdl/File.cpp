@@ -1,18 +1,11 @@
-#include <cerrno>
+#include <filesystem>
 #include <string>
-#include <map>
-
-#ifdef WIN32
-#include <direct.h>
-#include <shlobj.h>
-#else
-#include <dirent.h>
-#include <sys/stat.h>
-#endif
 
 #include "SDL.h"
 
 #include "File.hpp"
+
+namespace fs = std::filesystem;
 
 static std::string basePath;
 
@@ -80,93 +73,34 @@ uint32_t get_file_length(void *fh)
 std::vector<blit::FileInfo> list_files(std::string path) {
   std::vector<blit::FileInfo> ret;
 
-#ifdef WIN32
-  HANDLE file;
-  WIN32_FIND_DATAA findData;
-  file = FindFirstFileA((basePath + path + "\\*").c_str(), &findData);
-
-  if(file == INVALID_HANDLE_VALUE)
-    return ret;
-
-  do
-  {
+  std::error_code err;
+  for(auto &entry: fs::directory_iterator(basePath + path, fs::directory_options::follow_directory_symlink, err)) {
     blit::FileInfo info;
-    info.name = findData.cFileName;
 
-    if(info.name == "." || info.name == "..")
-      continue;
+    info.name = entry.path().filename();
 
     info.flags = 0;
 
-    if(findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+    if(entry.is_directory())
       info.flags |= blit::FileFlags::directory;
 
     ret.push_back(info);
   }
-  while(FindNextFileA(file, &findData) != 0);
-
-  FindClose(file);
-
-#else
-  auto dir = opendir((basePath + path).c_str());
-
-  if(!dir)
-    return ret;
-
-  struct dirent *ent;
-
-  while((ent = readdir(dir))) {
-    blit::FileInfo info;
-
-    info.name = ent->d_name;
-
-    if(info.name == "." || info.name == "..")
-      continue;
-
-    info.flags = 0;
-
-    if(ent->d_type == DT_LNK) {
-      // lookup link target
-      struct stat stat_buf;
-  
-      if(stat((basePath + path + "/" + info.name).c_str(), &stat_buf) >= 0 && S_ISDIR(stat_buf.st_mode))
-        info.flags |= blit::FileFlags::directory;
-    } else if(ent->d_type == DT_DIR)
-      info.flags |= blit::FileFlags::directory;
-
-    ret.push_back(info);
-  }
-
-  closedir(dir);
-#endif
 
   return ret;
 }
 
 bool file_exists(std::string path) {
-#ifdef WIN32
-	DWORD attribs = GetFileAttributesA(path.c_str());
-	return (attribs != INVALID_FILE_ATTRIBUTES && !(attribs & FILE_ATTRIBUTE_DIRECTORY));
-#else
-  struct stat stat_buf;
-  return (stat(path.c_str(), &stat_buf) == 0 && S_ISREG(stat_buf.st_mode));
-#endif
+  std::error_code err;
+  return fs::status(path, err).type() == fs::file_type::regular;
 }
 
 bool directory_exists(std::string path) {
-#ifdef WIN32
-	DWORD attribs = GetFileAttributesA(path.c_str());
-	return (attribs != INVALID_FILE_ATTRIBUTES && (attribs & FILE_ATTRIBUTE_DIRECTORY));
-#else
-  struct stat stat_buf;
-  return (stat(path.c_str(), &stat_buf) == 0 && S_ISDIR(stat_buf.st_mode));
-#endif
+  std::error_code err;
+  return fs::status(path, err).type() == fs::file_type::directory;
 }
 
 bool create_directory(std::string path) {
-#ifdef WIN32
-  return _mkdir((basePath + path).c_str()) == 0 || errno == EEXIST;
-#else
-  return mkdir((basePath + path).c_str(), 0755) == 0 || errno == EEXIST;
-#endif
+  std::error_code err;
+  return directory_exists(path) || fs::create_directory(path, err);
 }
