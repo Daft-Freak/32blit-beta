@@ -86,7 +86,7 @@ std::vector<blit::FileInfo> list_files(std::string path) {
 
     info.flags = 0;
 
-    if(entry.is_directory())
+    if(entry.status().type() == fs::file_type::directory)
       info.flags |= blit::FileFlags::directory;
 
     ret.push_back(info);
