@@ -147,7 +147,7 @@ target_compile_definitions(BlitHalSTM32
     -DCDC_FIFO_BUFFERS=${CDC_FIFO_BUFFERS}
 )
 
-target_compile_options(BlitHalSTM32 PUBLIC "$<$<CONFIG:RELEASE>:-Os -finline-functions>")
+target_compile_options(BlitHalSTM32 PUBLIC "$<$<CONFIG:RELEASE>:-O2>")
 
 # 2nd build for external flash
 add_library(BlitHalSTM32Ext OBJECT ${SOURCES})
