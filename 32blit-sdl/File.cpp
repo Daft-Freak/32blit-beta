@@ -2,7 +2,7 @@
 #include <filesystem>
 namespace fs = std::filesystem;
 #else
-#include <boost/filesystem>
+#include <boost/filesystem.hpp>
 namespace fs = boost::filesystem;
 #endif
 
