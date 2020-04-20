@@ -62,7 +62,7 @@ jobs:
             sourceline: "ppa:daft-freak/arm-gcc"
           packages:
             gcc-arm-none-eabi
-            libboost-filesystem-dev # needed for GCC < 8
+            libboost-filesystem-dev
             libnewlib-arm-none-eabi
             libstdc++-arm-none-eabi-newlib
             python3-pip
