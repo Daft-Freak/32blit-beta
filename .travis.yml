@@ -38,6 +38,7 @@ jobs:
       addons:
         apt:
           clang-tidy
+          libboost-filesystem-dev
           libsdl2-dev
           libsdl2-image-dev
           python3-pip
@@ -62,7 +63,6 @@ jobs:
             sourceline: "ppa:daft-freak/arm-gcc"
           packages:
             gcc-arm-none-eabi
-            libboost-filesystem-dev
             libnewlib-arm-none-eabi
             libstdc++-arm-none-eabi-newlib
             python3-pip
