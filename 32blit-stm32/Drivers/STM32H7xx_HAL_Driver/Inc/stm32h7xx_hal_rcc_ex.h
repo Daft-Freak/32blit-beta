@@ -3612,6 +3612,10 @@ void     HAL_RCCEx_CRS_ErrorCallback(uint32_t Error);
   * @}
   */
 
+// HACK: exported provate funcs
+HAL_StatusTypeDef RCCEx_PLL2_Config(RCC_PLL2InitTypeDef *pll2, uint32_t Divider);
+HAL_StatusTypeDef RCCEx_PLL3_Config(RCC_PLL3InitTypeDef *pll3, uint32_t Divider);
+
  /* Private macros ------------------------------------------------------------*/
 /** @addtogroup RCCEx_Private_Macros RCCEx Private Macros
   * @{
