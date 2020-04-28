@@ -191,6 +191,43 @@ int main(void)
   /* USER CODE END 3 */
 }
 
+// HAL_RCCEx_PeriphCLKConfig is a HUGE (~2k bytes, near 1.5k lines) function, this is all we actually need from it...
+HAL_StatusTypeDef PeriphCLKConfig(RCC_PeriphCLKInitTypeDef *PeriphClkInit)
+{
+  // QSPI
+  __HAL_RCC_QSPI_CONFIG(RCC_QSPICLKSOURCE_D1HCLK);
+
+  // SPI 1/2/3
+  __HAL_RCC_PLLCLKOUT_ENABLE(RCC_PLL1_DIVQ);
+  __HAL_RCC_SPI123_CONFIG(RCC_SPI123CLKSOURCE_PLL);
+
+  // SPI 4/5
+  __HAL_RCC_SPI45_CONFIG(RCC_SPI45CLKSOURCE_HSI);
+
+  // I2C 4
+  __HAL_RCC_I2C4_CONFIG(RCC_I2C4CLKSOURCE_D3PCLK1);
+
+  // ADC
+  if(RCCEx_PLL2_Config(&(PeriphClkInit->PLL2), /*DIVIDER_P_UPDATE*/ 0) != HAL_OK)
+    return HAL_ERROR;
+
+  __HAL_RCC_ADC_CONFIG(RCC_ADCCLKSOURCE_PLL2);
+
+  // USB
+  __HAL_RCC_USB_CONFIG(RCC_USBCLKSOURCE_HSI48);
+
+  // LTDC
+  if(RCCEx_PLL3_Config(&(PeriphClkInit->PLL3), /*DIVIDER_R_UPDATE*/ 2) != HAL_OK)
+    return HAL_ERROR;
+  
+  // RNG
+  __HAL_RCC_RNG_CONFIG(RCC_RNGCLKSOURCE_HSI48);
+
+  // HRTIM1 is ifdef'd out?
+
+  return HAL_OK;
+}
+
 /**
   * @brief System Clock Configuration
   * @retval None
@@ -250,11 +287,11 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_LTDC|RCC_PERIPHCLK_HRTIM1
+  /*PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_LTDC|RCC_PERIPHCLK_HRTIM1
                               |RCC_PERIPHCLK_RNG|RCC_PERIPHCLK_SPI4
                               |RCC_PERIPHCLK_SPI1|RCC_PERIPHCLK_ADC
                               |RCC_PERIPHCLK_I2C4|RCC_PERIPHCLK_USB
-                              |RCC_PERIPHCLK_QSPI;
+                              |RCC_PERIPHCLK_QSPI;*/
   PeriphClkInitStruct.PLL2.PLL2M = 4;
   PeriphClkInitStruct.PLL2.PLL2N = 9;
   PeriphClkInitStruct.PLL2.PLL2P = 1;
@@ -271,15 +308,15 @@ void SystemClock_Config(void)
   PeriphClkInitStruct.PLL3.PLL3RGE = RCC_PLL3VCIRANGE_1;
   PeriphClkInitStruct.PLL3.PLL3VCOSEL = RCC_PLL3VCOWIDE;
   PeriphClkInitStruct.PLL3.PLL3FRACN = 0;
-  PeriphClkInitStruct.QspiClockSelection = RCC_QSPICLKSOURCE_D1HCLK;
+  /*PeriphClkInitStruct.QspiClockSelection = RCC_QSPICLKSOURCE_D1HCLK;
   PeriphClkInitStruct.Spi123ClockSelection = RCC_SPI123CLKSOURCE_PLL;
   PeriphClkInitStruct.Spi45ClockSelection = RCC_SPI45CLKSOURCE_HSI;
   PeriphClkInitStruct.RngClockSelection = RCC_RNGCLKSOURCE_HSI48;
   PeriphClkInitStruct.UsbClockSelection = RCC_USBCLKSOURCE_HSI48;
   PeriphClkInitStruct.I2c4ClockSelection = RCC_I2C4CLKSOURCE_D3PCLK1;
   PeriphClkInitStruct.AdcClockSelection = RCC_ADCCLKSOURCE_PLL2;
-  PeriphClkInitStruct.Hrtim1ClockSelection = RCC_HRTIM1CLK_CPUCLK;
-  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
+  PeriphClkInitStruct.Hrtim1ClockSelection = RCC_HRTIM1CLK_CPUCLK;*/
+  if (PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
   {
     Error_Handler();
   }
