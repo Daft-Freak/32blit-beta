@@ -14,15 +14,36 @@ void ProfilerProbe::start()
 	m_uStartUs = api.get_us_timer();
 }
 
+void ProfilerProbe::pause()
+{
+  if(!m_uStartUs)
+    return;
+
+  uint32_t uCurrentUs = api.get_us_timer();
+  if(uCurrentUs >= m_uStartUs)
+    m_uPausedUs += uCurrentUs - m_uStartUs;
+  else
+    m_uPausedUs += (api.get_max_us_timer() - m_uStartUs) + uCurrentUs;
+
+  m_uStartUs = 0;
+}
+
 uint32_t ProfilerProbe::store_elapsed_us(bool bRestart)
 {
-	if(m_uStartUs)
+	if(m_uStartUs || m_uPausedUs)
 	{
-		uint32_t uCurrentUs = api.get_us_timer();
-		if(uCurrentUs >= m_uStartUs)
-			m_metrics.uElapsedUs = uCurrentUs - m_uStartUs;
-		else
-			m_metrics.uElapsedUs = (api.get_max_us_timer() - m_uStartUs) + uCurrentUs;
+    if(m_uStartUs)
+    {
+      uint32_t uCurrentUs = api.get_us_timer();
+      if(uCurrentUs >= m_uStartUs)
+        m_metrics.uElapsedUs = uCurrentUs - m_uStartUs;
+      else
+        m_metrics.uElapsedUs = (api.get_max_us_timer() - m_uStartUs) + uCurrentUs;
+
+      m_metrics.uElapsedUs += m_uPausedUs;
+    }
+    else
+      m_metrics.uElapsedUs = m_uPausedUs;
 
 		m_metrics.uMinElapsedUs = std::min(m_metrics.uMinElapsedUs, m_metrics.uElapsedUs);
 		m_metrics.uMaxElapsedUs = std::max(m_metrics.uMaxElapsedUs, m_metrics.uElapsedUs);
@@ -42,7 +63,9 @@ uint32_t ProfilerProbe::store_elapsed_us(bool bRestart)
 	}
 
 	if(bRestart)
-	m_uStartUs = api.get_us_timer();
+	  m_uStartUs = api.get_us_timer();
+
+  m_uPausedUs = 0;
 
 	return m_metrics.uElapsedUs;
 }

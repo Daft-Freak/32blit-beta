@@ -63,7 +63,7 @@ public:
 	};
 
 
-	ProfilerProbe(const char *pszName, uint32_t uRunningAverageSize = 0, uint32_t uRunningAverageSpan = 1) : m_pszName(pszName), m_uStartUs(0), m_metrics(), m_pRunningAverage(nullptr), m_uGraphTimeUs(20000)
+	ProfilerProbe(const char *pszName, uint32_t uRunningAverageSize = 0, uint32_t uRunningAverageSpan = 1) : m_pszName(pszName), m_uStartUs(0), m_metrics(), m_pRunningAverage(nullptr), m_uGraphTimeUs(20000), m_uPausedUs(0)
 	{
 		if(uRunningAverageSize)
 		{
@@ -85,6 +85,8 @@ public:
 		m_metrics.clear();
 		m_uStartUs = 0;
 	}
+
+  void pause();
 
 	uint32_t store_elapsed_us(bool bRestart = false);
 
@@ -126,6 +128,8 @@ private:
 	uint32_t							m_uRunningAverageSpan;
 	uint32_t							m_uRunningAverageSpanIndex;
 	uint32_t							m_uGraphTimeUs;
+
+	uint32_t 							m_uPausedUs;
 };
 
 
