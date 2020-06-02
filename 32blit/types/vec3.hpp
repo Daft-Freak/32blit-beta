@@ -17,6 +17,7 @@ namespace blit {
 
     Vec3(const Vec3 &v) = default;
     Vec3(const float x = 0, const float y = 0, const float z = 0);
+    Vec3(const float *v);
 
     inline Vec3& operator-= (const Vec3 &a) { x -= a.x; y -= a.y;  z -= a.z; return *this; }
     inline Vec3& operator+= (const Vec3 &a) { x += a.x; y += a.y;  z += a.z; return *this; }

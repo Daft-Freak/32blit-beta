@@ -7,6 +7,8 @@
 
 namespace blit {
 
+  Vec2::Vec2(const float *v) : x(v[0]), y(v[1]) {}
+
   void Vec2::rotate(const float &a) {
     float c = cosf(a);
     float s = sinf(a);
