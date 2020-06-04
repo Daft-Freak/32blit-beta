@@ -11,6 +11,7 @@
 #include "file.hpp"
 #include "jpeg.hpp"
 #include "executable.hpp"
+#include "multiplayer.hpp"
 
 #include "adc.h"
 #include "tim.h"
@@ -94,6 +95,8 @@ static void init_api_shared() {
   // reset shared outputs
   api.vibration = 0.0f;
   api.LED = Pen();
+
+  api.message_received = nullptr;
 }
 
 int blit_debugf(const char * psFormatString, va_list args)
@@ -437,8 +440,11 @@ void blit_init() {
     blit::api.decode_jpeg_buffer = blit_decode_jpeg_buffer;
     blit::api.decode_jpeg_file = blit_decode_jpeg_file;
 
+    blit::api.send_message = multiplayer::send_message;
 
   display::init();
+
+  multiplayer::init();
   
   blit::init();
 
