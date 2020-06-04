@@ -66,6 +66,10 @@ namespace blit {
     JPEGImage (*decode_jpeg_file)(const std::string &filename, AllocateCallback alloc);
 
     bool (*launch)(const char *filename);
+
+    // multiplayer
+    void (*send_message)(const uint8_t *data, uint16_t len);
+    void (*message_received)(const uint8_t *data, uint16_t len); // set by user
   };
   #pragma pack(pop)
 
