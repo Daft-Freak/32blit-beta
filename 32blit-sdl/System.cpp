@@ -8,6 +8,7 @@
 #include "32blit.hpp"
 #include "UserCode.hpp"
 #include "JPEG.hpp"
+#include "Multiplayer.hpp"
 
 #include "engine/api_private.hpp"
 
@@ -89,6 +90,11 @@ uint32_t get_max_us_timer()
 	return UINT32_MAX;
 }
 
+extern Multiplayer *blit_multiplayer;
+void blit_send_message(const uint8_t *data, uint16_t length) {
+	blit_multiplayer->send_message(data, length);
+}
+
 // SDL events
 const Uint32 System::timer_event = SDL_RegisterEvents(2);
 const Uint32 System::loop_event = System::timer_event + 1;
@@ -160,6 +166,8 @@ void System::run() {
 
 	blit::api.decode_jpeg_buffer = blit_decode_jpeg_buffer;
 	blit::api.decode_jpeg_file = blit_decode_jpeg_file;
+
+	blit::api.send_message = blit_send_message;
 
 	::set_screen_mode(blit::lores);
 
