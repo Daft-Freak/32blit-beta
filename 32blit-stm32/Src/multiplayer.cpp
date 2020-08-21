@@ -7,6 +7,7 @@
 #include "engine/api_private.hpp"
 
 extern CDCCommandStream g_commandStream;
+extern USBD_HandleTypeDef hUsbDeviceHS;
 
 using namespace blit;
 
@@ -62,9 +63,9 @@ namespace multiplayer {
 
   void send_message(const uint8_t *data, uint16_t length) {
     // header
-    while(USBD_BUSY == CDC_Transmit_HS((uint8_t *)"32BLUSER", 8));
-    while(USBD_BUSY == CDC_Transmit_HS((uint8_t *)&length, 2));
+    while(hUsbDeviceHS.dev_state == USBD_STATE_CONFIGURED && USBD_BUSY == CDC_Transmit_HS((uint8_t *)"32BLUSER", 8));
+    while(hUsbDeviceHS.dev_state == USBD_STATE_CONFIGURED && USBD_BUSY == CDC_Transmit_HS((uint8_t *)&length, 2));
 
-    while(USBD_BUSY == CDC_Transmit_HS((uint8_t *)data, length));
+    while(hUsbDeviceHS.dev_state == USBD_STATE_CONFIGURED && USBD_BUSY == CDC_Transmit_HS((uint8_t *)data, length));
   }
 }
