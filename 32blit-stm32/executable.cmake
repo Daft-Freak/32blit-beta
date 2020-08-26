@@ -1,4 +1,5 @@
 set(MCU_LINKER_SCRIPT "${CMAKE_CURRENT_LIST_DIR}/${MCU_LINKER_SCRIPT}")
+set(MCU_LINKER_SCRIPT_USER "${CMAKE_CURRENT_LIST_DIR}/${MCU_LINKER_SCRIPT_USER}")
 
 set(USER_STARTUP ${CMAKE_CURRENT_LIST_DIR}/startup_user.s ${CMAKE_CURRENT_LIST_DIR}/startup_user.cpp)
 
@@ -24,7 +25,7 @@ function(blit_executable NAME SOURCES)
 
 	set_target_properties(${NAME} PROPERTIES
 		COMPILE_FLAGS "-fPIC -mno-pic-data-is-text-relative -mno-single-pic-base"
-		LINK_FLAGS "-specs=nano.specs -u _printf_float -fPIC -T ${MCU_LINKER_SCRIPT} ${MCU_LINKER_FLAGS_EXT} -Wl,--emit-relocs"
+		LINK_FLAGS "-specs=nano.specs -u _printf_float -fPIC -T ${MCU_LINKER_SCRIPT_USER} ${MCU_LINKER_FLAGS_EXT} -Wl,--emit-relocs"
 	)
 	set_target_properties(${NAME} PROPERTIES LINK_DEPENDS ${MCU_LINKER_SCRIPT} SUFFIX ".elf")
 
