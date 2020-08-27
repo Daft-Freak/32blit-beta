@@ -108,7 +108,8 @@ namespace blit {
       return;
     }
 
-    int x = r, y = 0, err = -r;
+    int x = r, y = 0, err = 1 - r;
+
     while (x >= y)
     {
       int lastY = y;
@@ -120,7 +121,8 @@ namespace blit {
         h_span(Point(c.x - x, c.y - lastY), x * 2 + 1);
       }
 
-      if (err >= 0) {
+      if (err >= 0) 
+      {
         if (x != lastY) {
           h_span(Point(c.x - lastY, c.y + x), lastY * 2 + 1);
           if (x != 0) {
