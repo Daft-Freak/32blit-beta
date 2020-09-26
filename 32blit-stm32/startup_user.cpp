@@ -1,6 +1,10 @@
 #include "engine/engine.hpp"
 #include "engine/api_private.hpp"
 
+#ifdef NDEBUG
+extern "C" void __assert_func(const char *file, int line, const char *func, const char *expression){}
+#endif
+
 extern void init();
 extern void update(uint32_t time);
 extern void render(uint32_t time);
