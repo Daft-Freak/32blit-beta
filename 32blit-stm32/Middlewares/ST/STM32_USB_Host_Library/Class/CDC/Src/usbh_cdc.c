@@ -312,9 +312,10 @@ static USBH_StatusTypeDef USBH_CDC_ClassRequest(USBH_HandleTypeDef *phost)
 
   /*Issue the get line coding request*/
   status =   GetLineCoding(phost, &CDC_Handle->LineCoding);
-  if (status == USBH_OK)
+  if (status == USBH_OK || status == USBH_NOT_SUPPORTED)
   {
     phost->pUser(phost, HOST_USER_CLASS_ACTIVE);
+    return USBH_OK;
   }
   return status;
 }
