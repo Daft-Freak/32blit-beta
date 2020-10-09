@@ -64,7 +64,7 @@ jobs:
     #    uses a compiled language
 
     - run: |
-       sudo apt install libsdl2-dev
+       sudo apt install libsdl2-dev python3-setuptools
        pip3 install 32blit
        cmake -B build .
        cmake --build build
