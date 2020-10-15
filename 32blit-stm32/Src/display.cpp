@@ -149,6 +149,35 @@ namespace display {
     }*/
   }
 
+  void dma2d_palette_flip(const Surface &source) {
+    // copy RGBA at quarter width
+    SCB_CleanInvalidateDCache_by_Addr((uint32_t *)(source.data), 320 * 240);
+
+    // set the transform type
+    DMA2D->CR = (DMA2D->CR & ~DMA2D_CR_MODE) | (0 << DMA2D_CR_MODE_Pos);
+    // set source pixel format
+    DMA2D->FGPFCCR = (DMA2D->FGPFCCR & ~DMA2D_FGPFCCR_CM) | 0 /*RGBA8888*/;
+    // set source buffer address
+    DMA2D->FGMAR = (uintptr_t)source.data; 
+    // set target pixel format
+    DMA2D->OPFCCR = (DMA2D->OPFCCR & ~DMA2D_OPFCCR_CM) | 0 /*RGBA8888*/;
+    // set target buffer address
+    DMA2D->OMAR = (uintptr_t)&__ltdc_start + 320 * 240 * 2;
+    // set the number of pixels per line and number of lines    
+    DMA2D->NLR = (80 << 16) | (240);
+    // set the source offset
+    DMA2D->FGOR = 0;
+    // set the output offset
+    DMA2D->OOR = 0;
+    // trigger start of dma2d transfer
+    DMA2D->CR |= DMA2D_CR_START;
+
+    // wait for transfer to complete
+    while(DMA2D->CR & DMA2D_CR_START) {
+      // never gets here!
+    }
+  }
+
   void flip(const Surface &source) {        
     static uint32_t flip_time = 0;
 
@@ -233,12 +262,7 @@ namespace display {
           palette_needs_update = 0;
         }
 
-        uint32_t *s = (uint32_t *)source.data;
-        uint32_t *d = (uint32_t *)(&__ltdc_start + 320 * 240 * 2);
-        uint32_t c = (320 * 240) >> 2;
-        while(c--) {
-          *d++ = *s++;
-        }
+        dma2d_palette_flip(source);
     }
 
     // since the ltdc hardware pulls frame data directly over the memory bus
