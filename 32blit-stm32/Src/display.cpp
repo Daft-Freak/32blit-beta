@@ -98,11 +98,11 @@ namespace display {
     // set the transform type (clear bits 17..16 of control register)
     DMA2D->CR = (DMA2D->CR & ~DMA2D_CR_MODE) | (4 << DMA2D_CR_MODE_Pos);
     // set source pixel format (clear bits 3..0 of foreground format register)
-    DMA2D->FGPFCCR = (DMA2D->FGPFCCR & ~DMA2D_FGPFCCR_CM) | 0 /*ARGB8888*/;
+    DMA2D->FGPFCCR = (DMA2D->FGPFCCR & ~DMA2D_FGPFCCR_CM) | 1 /*RGB888*/;
     // set source buffer address
     DMA2D->FGMAR = (uintptr_t)source.data; 
     // set target pixel format (clear bits 3..0 of output format register)
-    DMA2D->OPFCCR = (DMA2D->OPFCCR & ~DMA2D_OPFCCR_CM) | 0 /*ARGB8888*/;
+    DMA2D->OPFCCR = (DMA2D->OPFCCR & ~DMA2D_OPFCCR_CM) | 1 /*RGB888*/;
     // set target buffer address
     DMA2D->OMAR = (uintptr_t)&__ltdc_start;
     // set the number of pixels per line and number of lines    
