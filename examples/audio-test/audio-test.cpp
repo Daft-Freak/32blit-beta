@@ -100,5 +100,10 @@ void update(uint32_t time_ms) {
       channels[i].trigger_release();
     }
   }
+  
+  int test = 0;
+  int test2;
+  
+  if(test2) return;
 }
   
