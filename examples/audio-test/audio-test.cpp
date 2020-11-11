@@ -103,6 +103,6 @@ void update(uint32_t time_ms) {
   
   char buf[5];
   uint32_t x = 10;
-  snprintf(buf, 5 "%i", x);
+  snprintf(buf, 5, "%i", x);
 }
   
