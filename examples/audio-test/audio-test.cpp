@@ -101,11 +101,8 @@ void update(uint32_t time_ms) {
     }
   }
   
-  const int test = 0;
-  int test2;
-  
-  if(test2) return;
-  
-  int test3 = (int)1.0f;
+  char buf[5];
+  uint32_t x = 10;
+  snprintf(buf, 5 "%i", x);
 }
   
