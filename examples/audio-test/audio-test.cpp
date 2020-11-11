@@ -101,9 +101,11 @@ void update(uint32_t time_ms) {
     }
   }
   
-  int test = 0;
+  const int test = 0;
   int test2;
   
   if(test2) return;
+  
+  int test3 = (int)1.0f;
 }
   
