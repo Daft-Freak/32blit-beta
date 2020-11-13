@@ -71,6 +71,32 @@
           "type": "PATH"
         }
       ]
+    },
+    {
+      "name": "stm32-Debug",
+      "generator": "Ninja",
+      "configurationType": "Debug",
+      "buildRoot": "${projectDir}\\out\\build\\${name}",
+      "installRoot": "${projectDir}\\out\\install\\${name}",
+      "cmakeCommandArgs": "",
+      "buildCommandArgs": "-v",
+      "ctestCommandArgs": "",
+      "cmakeToolchain": "${workspaceRoot}/32blit.toolchain",
+      "inheritEnvironments": [],
+      "variables": []
+    },
+    {
+      "name": "stm32-Release",
+      "generator": "Ninja",
+      "configurationType": "RelWithDebInfo",
+      "buildRoot": "${projectDir}\\out\\build\\${name}",
+      "installRoot": "${projectDir}\\out\\install\\${name}",
+      "cmakeCommandArgs": "",
+      "buildCommandArgs": "-v",
+      "ctestCommandArgs": "",
+      "inheritEnvironments": [],
+      "variables": [],
+      "cmakeToolchain": "${workspaceRoot}/32blit.toolchain"
     }
   ]
 }
