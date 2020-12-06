@@ -24,7 +24,7 @@ if (NOT DEFINED BLIT_ONCE)
 	if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
 		set(CMAKE_BUILD_TYPE "Release")
 	endif()
-	
+
 	if(WIN32)
 		add_definitions("-DWIN32")
 	endif()
@@ -51,7 +51,7 @@ if (NOT DEFINED BLIT_ONCE)
 		target_include_directories(${TARGET} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 	endfunction()
 
-	if (${CMAKE_SYSTEM_NAME} STREQUAL Generic)
+	if (32BLIT_HW)
 		set(FLASH_PORT "AUTO" CACHE STRING "Port to use for flash")
 
 		include(${CMAKE_CURRENT_LIST_DIR}/32blit-stm32/executable.cmake)
