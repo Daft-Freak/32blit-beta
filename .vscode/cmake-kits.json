@@ -10,5 +10,9 @@
   {
     "name": "32Blit-Pico2",
     "toolchainFile": "${workspaceFolder}/pico2.toolchain"
+  },
+  {
+    "name": "32Blit - Teensy 4.1",
+    "toolchainFile": "${workspaceFolder}/32blit-t41.toolchain"
   }
 ]
