@@ -91,6 +91,10 @@ uint32_t get_max_us_timer()
 }
 
 extern Multiplayer *blit_multiplayer;
+bool blit_is_multiplayer_connected() {
+	return blit_multiplayer->is_connected();
+}
+
 void blit_send_message(const uint8_t *data, uint16_t length) {
 	blit_multiplayer->send_message(data, length);
 }
@@ -167,6 +171,7 @@ void System::run() {
 	blit::api.decode_jpeg_buffer = blit_decode_jpeg_buffer;
 	blit::api.decode_jpeg_file = blit_decode_jpeg_file;
 
+	blit::api.is_multiplayer_connected = blit_is_multiplayer_connected;
 	blit::api.send_message = blit_send_message;
 
 	::set_screen_mode(blit::lores);

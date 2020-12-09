@@ -61,6 +61,11 @@ namespace multiplayer {
     g_commandStream.AddCommandHandler(CDCCommandHandler::CDCFourCCMake<'U', 'S', 'E', 'R'>::value, &cdc_user_handler);
   }
 
+  bool is_connected() {
+    // this really only means that something is connected, might not be another blit...
+    return hUsbDeviceHS.dev_state == USBD_STATE_CONFIGURED;
+  }
+
   void send_message(const uint8_t *data, uint16_t length) {
     // header
     while(hUsbDeviceHS.dev_state == USBD_STATE_CONFIGURED && USBD_BUSY == CDC_Transmit_HS((uint8_t *)"32BLUSER", 8));

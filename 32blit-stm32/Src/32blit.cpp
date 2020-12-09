@@ -425,6 +425,7 @@ void blit_init() {
     blit::api.decode_jpeg_buffer = blit_decode_jpeg_buffer;
     blit::api.decode_jpeg_file = blit_decode_jpeg_file;
 
+    blit::api.is_multiplayer_connected = multiplayer::is_connected;
     blit::api.send_message = multiplayer::send_message;
 
   display::init();

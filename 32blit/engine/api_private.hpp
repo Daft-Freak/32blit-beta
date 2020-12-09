@@ -68,6 +68,7 @@ namespace blit {
     bool (*launch)(const char *filename);
 
     // multiplayer
+    bool (*is_multiplayer_connected)();
     void (*send_message)(const uint8_t *data, uint16_t len);
     void (*message_received)(const uint8_t *data, uint16_t len); // set by user
   };
