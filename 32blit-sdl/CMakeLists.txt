@@ -189,7 +189,7 @@ function(blit_metadata TARGET FILE)
 		set_source_files_properties(${ICON} PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
 	endif()
 
-	file(GENERATE OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/metadata.cpp
+	file(GENERATE OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/_metadata.cpp
 		CONTENT "
 const char *metadata_title = \"${METADATA_TITLE}\";
 const char *metadata_author = \"${METADATA_AUTHOR}\";
@@ -197,5 +197,5 @@ const char *metadata_description = \"${METADATA_DESCRIPTION}\";
 const char *metadata_version = \"${METADATA_VERSION}\";
 		"
 	)
-	target_sources(${TARGET} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/metadata.cpp)
+	target_sources(${TARGET} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/_metadata.cpp)
 endfunction()
