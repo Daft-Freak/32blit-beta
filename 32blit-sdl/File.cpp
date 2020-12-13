@@ -197,3 +197,7 @@ std::string get_save_path() {
 
   return ret;
 }
+
+bool is_storage_available() {
+  return true;
+}
