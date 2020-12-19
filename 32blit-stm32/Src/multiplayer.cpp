@@ -66,6 +66,10 @@ namespace multiplayer {
     return hUsbDeviceHS.dev_state == USBD_STATE_CONFIGURED;
   }
 
+  void set_enabled(bool enabled) {
+    //TODO
+  }
+
   void send_message(const uint8_t *data, uint16_t length) {
     // header
     while(hUsbDeviceHS.dev_state == USBD_STATE_CONFIGURED && USBD_BUSY == CDC_Transmit_HS((uint8_t *)"32BLUSER", 8));
