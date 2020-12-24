@@ -57,6 +57,8 @@ namespace multiplayer {
 
   CDCUserHandler cdc_user_handler;
 
+  bool enabled = false;
+
   void init() {
     g_commandStream.AddCommandHandler(CDCCommandHandler::CDCFourCCMake<'U', 'S', 'E', 'R'>::value, &cdc_user_handler);
   }
@@ -68,6 +70,7 @@ namespace multiplayer {
 
   void set_enabled(bool enabled) {
     //TODO
+    multiplayer::enabled = enabled;
   }
 
   void send_message(const uint8_t *data, uint16_t length) {
