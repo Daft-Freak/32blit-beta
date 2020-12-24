@@ -1,0 +1,35 @@
+name: Old CMake
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  configure:
+
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install deps
+      run: |
+        sudo apt update && sudo apt install libsdl2-dev libsdl2-image-dev gcc-arm-none-eabi libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib python3-setuptools
+        pip3 install 32blit
+
+    - name: Setup CMake
+      uses: jwlawson/actions-setup-cmake@v1.5
+      with:
+        cmake-version: 3.9
+
+    - name: Create Build Environment
+      run: cmake -E make_directory ${{runner.workspace}}/build
+
+    - name: Configure CMake
+      working-directory: ${{runner.workspace}}/build
+      run: cmake $GITHUB_WORKSPACE
+
+    - name: Configure CMake (STM32)
+      working-directory: ${{runner.workspace}}/build
+      run: |
+        rm -rf ./*
+        cmake $GITHUB_WORKSPACE -DCMAKE_TOOLCHAIN_FILE=../32blit-beta/32blit.toolchain
