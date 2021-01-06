@@ -406,7 +406,7 @@ static void USBD_GetDescriptor(USBD_HandleTypeDef *pdev,
                                USBD_SetupReqTypedef *req)
 {
   uint16_t len = 0U;
-  uint8_t *pbuf = NULL;
+  const uint8_t *pbuf = NULL;
   uint8_t err = 0U;
 
   switch (req->wValue >> 8)
@@ -432,12 +432,12 @@ static void USBD_GetDescriptor(USBD_HandleTypeDef *pdev,
       if (pdev->dev_speed == USBD_SPEED_HIGH)
       {
         pbuf = pdev->pClass->GetHSConfigDescriptor(&len);
-        pbuf[1] = USB_DESC_TYPE_CONFIGURATION;
+        //pbuf[1] = USB_DESC_TYPE_CONFIGURATION;
       }
       else
       {
         pbuf = pdev->pClass->GetFSConfigDescriptor(&len);
-        pbuf[1] = USB_DESC_TYPE_CONFIGURATION;
+        //pbuf[1] = USB_DESC_TYPE_CONFIGURATION;
       }
       break;
 
@@ -551,7 +551,7 @@ static void USBD_GetDescriptor(USBD_HandleTypeDef *pdev,
       if (pdev->dev_speed == USBD_SPEED_HIGH)
       {
         pbuf = pdev->pClass->GetOtherSpeedConfigDescriptor(&len);
-        pbuf[1] = USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION;
+        //pbuf[1] = USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION;
       }
       else
       {
@@ -575,7 +575,7 @@ static void USBD_GetDescriptor(USBD_HandleTypeDef *pdev,
     if ((len != 0U) && (req->wLength != 0U))
     {
       len = MIN(len, req->wLength);
-      (void)USBD_CtlSendData(pdev, pbuf, len);
+      (void)USBD_CtlSendData(pdev, (uint8_t *)pbuf, len);
     }
 
     if (req->wLength == 0U)
