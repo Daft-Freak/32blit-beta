@@ -40,7 +40,7 @@ struct {
       screen.rectangle(Rect(0, 215, 320, 25));
       screen.pen = Pen(255, 255, 255);
       screen.text(this->message, minimal_font, Point(5, 220));
-      uint32_t progress_width = ((this->value * 310) / this->total);      
+      uint32_t progress_width = ((this->value * 310) / this->total);
       screen.rectangle(Rect(5, 230, progress_width, 5));
     }
   }
@@ -76,4 +76,6 @@ private:
   uint32_t num_relocs = 0, cur_reloc = 0;
   std::vector<uint32_t> relocation_offsets;
   bool flash_mapped = false;
+
+  bool auto_launch = false;
 };

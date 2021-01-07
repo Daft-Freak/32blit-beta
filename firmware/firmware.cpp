@@ -409,6 +409,7 @@ void init() {
 
   // register SAVE
   g_commandStream.AddCommandHandler(CDCCommandHandler::CDCFourCCMake<'S', 'A', 'V', 'E'>::value, &flashLoader);
+  g_commandStream.AddCommandHandler(CDCCommandHandler::CDCFourCCMake<'S', 'A', 'V', 'L'>::value, &flashLoader);
 
   // register LS
   g_commandStream.AddCommandHandler(CDCCommandHandler::CDCFourCCMake<'_', '_', 'L', 'S'>::value, &flashLoader);
@@ -669,9 +670,11 @@ bool FlashLoader::StreamInit(CDCFourCC uCommand)
     break;
 
     case CDCCommandHandler::CDCFourCCMake<'S', 'A', 'V', 'E'>::value:
+    case CDCCommandHandler::CDCFourCCMake<'S', 'A', 'V', 'L'>::value:
       state = stSaveFile;
       m_parseState = stFilename;
       m_uParseIndex = 0;
+      auto_launch = uCommand == CDCCommandHandler::CDCFourCCMake<'S', 'A', 'V', 'L'>::value;
       blit_disable_user_code();
     break;
 
@@ -873,8 +876,12 @@ CDCCommandHandler::StreamResult FlashLoader::StreamData(CDCDataStream &dataStrea
                     f_close(&file);
 
                     state = stFlashFile;
-                    if(result != srError)
+                    if(result != srError) {
                       result = srFinish;
+
+                      if(auto_launch)
+                        launch_game_from_sd(m_sFilename);
+                    }
 
                     progress.hide();
                     blit_enable_user_code();
