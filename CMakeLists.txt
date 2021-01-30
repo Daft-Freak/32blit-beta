@@ -22,7 +22,7 @@ if(32BLIT_HW)
     add_subdirectory(firmware-update)
 endif()
 
-add_subdirectory(launcher)
+#add_subdirectory(launcher)
 
 # include dist files in install
 install(DIRECTORY
