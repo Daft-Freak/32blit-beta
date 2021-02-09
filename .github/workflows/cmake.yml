@@ -74,7 +74,7 @@ jobs:
     - name: Install deps
       if: runner.os == 'macOS'
       run: |
-        ci/install_sdl_macos.sh
+        brew install sdl2 sdl2_image sdl2_net
         python3 -m pip install 32blit requests
 
     # Windows (VS) deps
