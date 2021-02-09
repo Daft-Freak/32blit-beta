@@ -39,6 +39,7 @@ jobs:
           - os: macos-latest
             name: macOS
             cache-key: macos
+            release-suffix: MACOS
 
           - os: windows-latest
             name: Visual Studio
