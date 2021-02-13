@@ -22,3 +22,28 @@ extern "C" bool cpp_do_init() {
 extern "C" void _exit(int code) {
   blit::api.exit(code != 0);
 }
+
+extern "C" void *_sbrk(ptrdiff_t incr) {
+  extern char end, __ltdc_start;
+  static char *cur_heap_end;
+
+  // ltdc is at the end of the heap
+  auto heap_end = &__ltdc_start;
+
+  // paletted is shifted forward 75k
+  if(blit::screen.format == blit::PixelFormat::P)
+    heap_end += 320 * 240;
+
+  if(!cur_heap_end)
+    cur_heap_end = &end;
+
+  // check for room
+  if(cur_heap_end + incr > heap_end) {
+    return (void *)-1;
+  }
+
+  char *ret = cur_heap_end;
+  cur_heap_end += incr;
+
+  return (void *)ret;
+}
