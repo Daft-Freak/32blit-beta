@@ -1,6 +1,7 @@
 #include <stdio.h>
 
 #include "pico/stdlib.h"
+#include "pico/audio_i2s.h"
 
 #include "input.hpp"
 #include "st7789.hpp"
@@ -15,6 +16,8 @@ uint8_t screen_fb[240 * 240 * 2];
 static Surface lores_screen(screen_fb, PixelFormat::RGB565, Size(160, 120));
 static Surface hires_screen(screen_fb, PixelFormat::RGB565, Size(240, 240));
 //static Surface hires_palette_screen(screen_fb, PixelFormat::P, Size(320, 240));
+
+static blit::AudioChannel channels[CHANNEL_COUNT];
 
 #ifdef DISPLAY_ST7789
 pimoroni::ST7789 st7789(240, 240, (uint16_t *)screen_fb);
@@ -86,10 +89,47 @@ void init();
 void render(uint32_t);
 void update(uint32_t);
 
+static struct audio_buffer_pool *init_audio() {
+#ifdef AUDIO_I2S
+    static audio_format_t audio_format = {
+      .sample_freq = 44100,
+      .format = AUDIO_BUFFER_FORMAT_PCM_S16,
+      .channel_count = 1
+    };
+
+    static struct audio_buffer_format producer_format = {
+      .format = &audio_format,
+      .sample_stride = 2
+    };
+
+    struct audio_buffer_pool *producer_pool = audio_new_producer_pool(&producer_format, 4, 441);
+    const struct audio_format *output_format;
+
+    struct audio_i2s_config config = {
+      .data_pin = PICO_AUDIO_I2S_DATA_PIN,
+      .clock_pin_base = PICO_AUDIO_I2S_CLOCK_PIN_BASE,
+      .dma_channel = 1,
+      .pio_sm = 0,
+    };
+
+    output_format = audio_i2s_setup(&audio_format, &config);
+    if (!output_format) {
+      panic("PicoAudio: Unable to open audio device.\n");
+    }
+
+    bool ok = audio_i2s_connect(producer_pool);
+    assert(ok);
+    audio_i2s_set_enabled(true);
+    return producer_pool;
+#else
+  return nullptr;
+#endif
+}
+
 int main() {
   stdio_init_all();
 
-  // api.channels = ::channels;
+  api.channels = ::channels;
 
   api.set_screen_mode = ::set_screen_mode;
   // api.set_screen_palette = ::set_screen_palette;
@@ -152,6 +192,8 @@ int main() {
   blit::render = ::render;
   blit::update = ::update;
 
+  struct audio_buffer_pool *ap = init_audio();
+
   // user init
   ::init();
 
@@ -160,6 +202,22 @@ int main() {
   while(true) {
     update_input();
     tick(::now());
+
+    // audio
+    if(ap) {
+      struct audio_buffer *buffer = take_audio_buffer(ap, false);
+      if(buffer) {
+        auto samples = (int16_t *) buffer->buffer->bytes;
+        for(uint32_t i = 0; i < buffer->max_sample_count; i += 2) {
+          int val = (int)blit::get_audio_frame() - 0x8000;
+          *samples++ = val;
+          *samples++ = val;
+        }
+
+        buffer->sample_count = buffer->max_sample_count;
+        give_audio_buffer(ap, buffer);
+      }
+    }
 
     auto now = ::now();
 
