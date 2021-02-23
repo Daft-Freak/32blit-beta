@@ -25,7 +25,7 @@ uint8_t __water[64 * 64];
 Surface *sprites;
 Surface *water;
 
-Map map(Rect(0, 0, 128, 128));
+TileMap map(const_cast<uint8_t *>(map_data), const_cast<uint8_t *>(map_data + 128 * 128), Size(128, 128), nullptr);
 
 struct object {
   Vec2 pos;
@@ -38,7 +38,7 @@ struct DrawObject {
   object o;
   float dist;
   Vec2 vs;
-  
+
   DrawObject(object obj, float dist, Vec2 vs): o(obj), dist(dist), vs(vs) {}
 
   bool operator< (const DrawObject &other) const {
@@ -67,12 +67,11 @@ float rad2deg(float r) {
 }
 
 void init() {
-  map.add_layer("ground", layer);
-  map.layers["ground"].transforms = layer_transforms;
-
   // Load our map sprites into the __sprites space we've reserved
   sprites = Surface::load(packed_data, __sprites, sizeof(__sprites));
   sprites->generate_mipmaps(3);
+  map.sprites = sprites;
+  map.empty_tile_id = 17;
 
   water = Surface::load(water_packed_data, __water, sizeof(__water));
 
@@ -80,26 +79,26 @@ void init() {
   Point p;
   for (p.y = 0; p.y < 128; p.y++) {
     for (p.x = 0; p.x < 128; p.x++) {
-      int16_t tid = map.layers["ground"].tile_at(p);
-      if (tid == 27) {
+      int16_t tid = map.tile_at(p);
+      if (tid == 26) {
         objects.emplace_back(
           Vec2(p.x * 8 + 4, p.y * 8 + 4),
           1
         );
       }
-      if (tid == 28) {
+      if (tid == 27) {
         objects.emplace_back(
           Vec2(p.x * 8 + 4, p.y * 8 + 4),
           2
         );
       }
-      if (tid == 29) {
+      if (tid == 28) {
         objects.emplace_back(
           Vec2(p.x * 8 + 4, p.y * 8 + 4),
           3
         );
       }
-      if (tid == 30) {
+      if (tid == 29) {
         objects.emplace_back(
           Vec2(p.x * 8 + 4, p.y * 8 + 4),
           4
@@ -109,7 +108,7 @@ void init() {
   }
 }
 
-/* get normalised value off 255 for the dist of object between the above values. 
+/* get normalised value off 255 for the dist of object between the above values.
   So if min is 300 and max is 800, if the distance is 400, we would want to get a scale of the alpha
 */
 float calulateFadeAlpha (const int maxDist, const int minDist, float dist) {
@@ -135,7 +134,7 @@ std::vector<DrawObject> drawObjects (std::vector<object> objects) {
     if(forward.dot(vo) > 0) { // check if object is in front of us
       Vec2 vs = world_to_screen(o.pos, fov, angle, pos, near, far, vp);
       float dist = (o.pos - pos).length();
-      
+
       vect.push_back(DrawObject(o,dist,vs));
     }
   }
@@ -159,7 +158,7 @@ void render(uint32_t time_ms) {
 
   screen.blit(water, Rect(0, 0, 64, 64), Point(0, 50));
 
-  mode7(&screen, sprites, &map.layers["ground"], fov, angle, pos, near, far, vp);
+  mode7(&screen, &map, fov, angle, pos, near, far, vp);
 
   std::vector<DrawObject> drawables = drawObjects(objects);
   std::sort(drawables.begin(), drawables.end()); // sort them so they draw in order
@@ -168,11 +167,11 @@ void render(uint32_t time_ms) {
   const int maxClearDistance = 300; // before sprites stop being fully opaque. start to fade out.
 
   for (DrawObject o : drawables) {
-   
+
     if (o.dist < float(maxViewDistance)) { // check if the object is in a reasonable distance
 
       if (o.dist > maxClearDistance) {
-        screen.alpha = calulateFadeAlpha(maxViewDistance, maxClearDistance, o.dist); 
+        screen.alpha = calulateFadeAlpha(maxViewDistance, maxClearDistance, o.dist);
       } else {
         screen.alpha = 255.0f;
       }
@@ -200,10 +199,10 @@ void render(uint32_t time_ms) {
   for (mmp.y = 0; mmp.y < 64; mmp.y++) {
     for (mmp.x = 0; mmp.x < 64; mmp.x++) {
       Point tp = mmp * 2.0f;
-      
-      int16_t tile_id = map.layers["ground"].tile_at(tp) - 1;
 
-      if (tile_id != -1) {
+      int16_t tile_id = map.tile_at(tp);
+
+      if (tile_id != map.empty_tile_id) {
         Point sp(
           (tile_id & 0b1111),
           (tile_id / 16)
@@ -216,7 +215,7 @@ void render(uint32_t time_ms) {
       }
     }
   }
-  
+
   Vec2 mmpos = (pos / 16.0f) + Vec2(160 - 64, 120 - 64);
   screen.pen = Pen(255, 255, 255);
   screen.pixel(mmpos);
@@ -258,7 +257,7 @@ float lerping(float a, float b, float f) {
 }
 
 void update(uint32_t time) {
-  
+
   static float angle_delta = 0.0f;
   float target_speed;
   float lerp_value = 0.002f;
@@ -268,14 +267,14 @@ void update(uint32_t time) {
 
   angle_delta -= joystick.x / 80.0f ;
 
-  if (pressed(Button::Y)) { 
+  if (pressed(Button::Y)) {
     // boost button
       target_speed = is_off_ground() ? 2.0f : 0.5f;
   } else {
       target_speed = is_off_ground() ? 0.8f : 0.0f;
   }
 
-  if (pressed(Button::X))  { 
+  if (pressed(Button::X))  {
     // break button
     target_speed = is_off_ground() ? 0.5f : 0.0f;
 
@@ -284,8 +283,8 @@ void update(uint32_t time) {
     }
   }
 
-  angle += deg2rad(angle_delta);   
-  Mat3 r = Mat3::rotation(angle);    
+  angle += deg2rad(angle_delta);
+  Mat3 r = Mat3::rotation(angle);
   pos = pos - (vel * r);
 
   if (pressed(Button::A) || (joystick.y > 0.0f)) {
