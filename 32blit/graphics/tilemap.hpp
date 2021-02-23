@@ -35,8 +35,8 @@ namespace blit {
 
     void draw(Surface *dest, Rect viewport, std::function<Mat3(uint8_t)> scanline_callback = nullptr);
 
-  //  void mipmap_texture_span(surface *dest, point s, uint16_t c, vec2 swc, vec2 ewc);
-    void texture_span(Surface *dest, Point s, uint16_t c, Vec2 swc, Vec2 ewc);
+    void mipmap_texture_span(Surface *dest, Point s, uint16_t c, Vec2 swc, Vec2 ewc);
+    void texture_span(Surface *dest, Point s, uint16_t c, Vec2 swc, Vec2 ewc, Surface *src = nullptr, uint8_t mipmap_index = 0);
   };
 
 }
