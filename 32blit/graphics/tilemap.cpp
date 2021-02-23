@@ -167,24 +167,27 @@ namespace blit {
 
       if (toff != -1) {
         uint8_t tile_id = tiles[toff];
-        uint8_t transform = transforms[toff];
 
-        // coordinate within sprite
-        uint8_t u = (wcx & 0b111) >> mipmap_index;
-        uint8_t v = (wcy & 0b111) >> mipmap_index;
+        if (tile_id != empty_tile_id) {
+          uint8_t transform = transforms[toff];
 
-        // if this tile has a transform then modify the uv coordinates
-        if (transform) {
-          v = (transform & 0b010) ? ((tile_size - 1) - v) : v;
-          u = (transform & 0b100) ? ((tile_size - 1) - u) : u;
-          if (transform & 0b001) { uint8_t tmp = u; u = v; v = tmp; }
+          // coordinate within sprite
+          uint8_t u = (wcx & 0b111) >> mipmap_index;
+          uint8_t v = (wcy & 0b111) >> mipmap_index;
+
+          // if this tile has a transform then modify the uv coordinates
+          if (transform) {
+            v = (transform & 0b010) ? ((tile_size - 1) - v) : v;
+            u = (transform & 0b100) ? ((tile_size - 1) - u) : u;
+            if (transform & 0b001) { uint8_t tmp = u; u = v; v = tmp; }
+          }
+
+          // sprite sheet coordinates for top left corner of sprite
+          u += (tile_id & 0b1111) * tile_size;
+          v += (tile_id >> 4) * tile_size;
+
+          dest->bbf(src, src->offset(u, v), dest, doff, 1, 1);
         }
-
-        // sprite sheet coordinates for top left corner of sprite
-        u += (tile_id & 0b1111) * tile_size;
-        v += (tile_id >> 4) * tile_size;
-
-        dest->bbf(src, src->offset(u, v), dest, doff, 1, 1);
       }
 
       wc += dwc;
