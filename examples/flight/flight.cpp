@@ -166,6 +166,7 @@ void render(uint32_t time_ms) {
   const int maxViewDistance = 600; // draw distance
   const int maxClearDistance = 300; // before sprites stop being fully opaque. start to fade out.
 
+  screen.sprites = sprites;
   for (DrawObject o : drawables) {
 
     if (o.dist < float(maxViewDistance)) { // check if the object is in a reasonable distance
@@ -176,9 +177,24 @@ void render(uint32_t time_ms) {
         screen.alpha = 255.0f;
       }
 
-      Rect sr(120, 112, 8, 16);
+      Rect sr;
 
-      screen.blit(sprites, sr, o.vs - Point(4, 15));
+      switch(o.o.type) {
+        case 1: // tree
+          sr = Rect(15, 14, 1, 2);
+          break;
+        case 2: // rock
+          sr = Rect(13, 14, 1, 1);
+          break;
+        case 3:
+          sr = Rect(14, 14, 1, 1);
+          break;
+        case 4: // bush
+          sr = Rect(14, 15, 1, 1);
+          break;
+      }
+
+      screen.sprite(sr, o.vs, Point(4, sr.h * 8 - 1));
     }
   }
 
