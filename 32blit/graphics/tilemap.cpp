@@ -131,7 +131,11 @@ namespace blit {
         ewc *= transform;
       }
 
-      texture_span(dest, Point(viewport.x, y), viewport.w, swc, ewc);
+      // fast path for tranlation only
+      if(swc.y == ewc.y && ewc.x - swc.x == viewport.w)
+        translated_span(dest, Point(viewport.x, y), viewport.w, swc);
+      else
+        texture_span(dest, Point(viewport.x, y), viewport.w, swc, ewc);
     }
   }
 
@@ -225,4 +229,48 @@ namespace blit {
     } while (c);
   }
 
+  // optimised for the common case of only translating the map
+  void TileMap::translated_span(Surface *dest, Point s, unsigned int c, Vec2 swc) {
+    int wcx = floorf(swc.x);
+    int wcy = floorf(swc.y);
+
+    int32_t doff = dest->offset(s);
+
+    int tw = std::min(c, 8u - (wcx & 0b111));
+
+    do {
+      int32_t toff = offset(wcx >> 3, wcy >> 3);
+
+      if (toff != -1 && tiles[toff] != empty_tile_id) {
+        uint8_t tile_id = tiles[toff];
+        uint8_t transform = transforms[toff];
+
+        // coordinate within sprite
+        int u = wcx & 0b111;
+        int v = wcy & 0b111;
+
+        int stride = 1;
+
+        // if this tile has a transform then modify the uv coordinates
+        if (transform) {
+          v = (transform & 0b010) ? (7 - v) : v;
+          u = (transform & 0b100) ? (7 - u) : u;
+          if (transform & 0b001) { int tmp = u; u = v; v = tmp; stride = sprites->bounds.w;}
+
+          if(transform & 0b100) stride *= -1;
+        }
+
+        // sprite sheet coordinates for top left corner of sprite
+        u += (tile_id % 16) * 8;
+        v += (tile_id / 16) * 8;
+
+        dest->bbf(sprites, sprites->offset(u, v), dest, doff, tw, stride);
+      }
+
+      c -= tw;
+      doff += tw;
+      wcx += tw;
+      tw = std::min(c, 8u);
+    } while(c);
+  }
 }
