@@ -32,10 +32,10 @@
 
 /* USER CODE END 1 */
 
-/** 
+/**
   * Enable DMA controller clock
   */
-void MX_DMA_Init(void) 
+void MX_DMA_Init(void)
 {
 
   /* DMA controller clock enable */
@@ -43,18 +43,19 @@ void MX_DMA_Init(void)
   __HAL_RCC_DMA2_CLK_ENABLE();
 
   /* DMA interrupt init */
+  uint32_t priority_group = NVIC_GetPriorityGrouping();
   /* DMA1_Stream0_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Stream0_IRQn, 4, 4);
-  HAL_NVIC_EnableIRQ(DMA1_Stream0_IRQn);
+  NVIC_SetPriority(DMA1_Stream0_IRQn, NVIC_EncodePriority(priority_group, 4, 4));
+  NVIC_EnableIRQ(DMA1_Stream0_IRQn);
   /* DMA1_Stream1_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Stream1_IRQn, 4, 4);
-  HAL_NVIC_EnableIRQ(DMA1_Stream1_IRQn);
+  NVIC_SetPriority(DMA1_Stream1_IRQn, NVIC_EncodePriority(priority_group, 4, 4));
+  NVIC_EnableIRQ(DMA1_Stream1_IRQn);
   /* DMA1_Stream2_IRQn interrupt configuration */
-  //HAL_NVIC_SetPriority(DMA1_Stream2_IRQn, 4, 4);
-  //HAL_NVIC_EnableIRQ(DMA1_Stream2_IRQn);
+  //NVIC_SetPriority(DMA1_Stream2_IRQn, NVIC_Encode_Priority(priority_group, 4, 4));
+  //NVIC_EnableIRQ(DMA1_Stream2_IRQn);
   /* DMAMUX1_OVR_IRQn interrupt configuration */
-  //HAL_NVIC_SetPriority(DMAMUX1_OVR_IRQn, 4, 4);
-  //HAL_NVIC_EnableIRQ(DMAMUX1_OVR_IRQn);
+  //NVIC_SetPriority(DMAMUX1_OVR_IRQn, NVIC_Encode_Priority(priority_group, 4, 4));
+  //NVIC_EnableIRQ(DMAMUX1_OVR_IRQn);
 
 }
 

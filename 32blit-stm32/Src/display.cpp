@@ -75,11 +75,12 @@ namespace display {
   void init() {
     __fb_hires_pal.palette = palette;
 
-    // TODO: replace interrupt setup with non HAL method
-    HAL_NVIC_SetPriority(LTDC_IRQn, 4, 4);
-    HAL_NVIC_EnableIRQ(LTDC_IRQn);
-		HAL_NVIC_SetPriority(DMA2D_IRQn,4,4 );//priority may be check again!
-		HAL_NVIC_EnableIRQ(DMA2D_IRQn);
+    uint32_t priority_group = NVIC_GetPriorityGrouping();
+
+    NVIC_SetPriority(LTDC_IRQn, NVIC_EncodePriority(priority_group, 4, 4));
+    NVIC_EnableIRQ(LTDC_IRQn);
+		NVIC_SetPriority(DMA2D_IRQn, NVIC_EncodePriority(priority_group, 4, 4));//priority may be check again!
+		NVIC_EnableIRQ(DMA2D_IRQn);
 
     ltdc_init();
     screen_init();

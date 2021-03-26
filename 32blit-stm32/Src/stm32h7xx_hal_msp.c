@@ -2,7 +2,7 @@
 /**
   ******************************************************************************
   * File Name          : stm32h7xx_hal_msp.c
-  * Description        : This file provides code for the MSP Initialization 
+  * Description        : This file provides code for the MSP Initialization
   *                      and de-Initialization codes.
   ******************************************************************************
   * @attention
@@ -32,7 +32,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN Define */
- 
+
 /* USER CODE END Define */
 
 /* Private macro -------------------------------------------------------------*/
@@ -72,23 +72,24 @@ void HAL_MspInit(void)
   /* System interrupt init*/
 
   /* USER CODE BEGIN MspInit 1 */
-  HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITYGROUP_4);
+  uint32_t priority_group = NVIC_PRIORITYGROUP_4;
+  NVIC_SetPriorityGrouping(NVIC_PRIORITYGROUP_4);
 
   /* System interrupt init*/
   /* MemoryManagement_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(MemoryManagement_IRQn, 0, 0);
+  NVIC_SetPriority(MemoryManagement_IRQn, NVIC_EncodePriority(priority_group, 0, 0));
   /* BusFault_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(BusFault_IRQn, 0, 0);
+  NVIC_SetPriority(BusFault_IRQn, NVIC_EncodePriority(priority_group, 0, 0));
   /* UsageFault_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(UsageFault_IRQn, 0, 0);
+  NVIC_SetPriority(UsageFault_IRQn, NVIC_EncodePriority(priority_group, 0, 0));
   /* SVCall_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(SVCall_IRQn, 0, 0);
+  NVIC_SetPriority(SVCall_IRQn, NVIC_EncodePriority(priority_group, 0, 0));
   /* DebugMonitor_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DebugMonitor_IRQn, 0, 0);
+  NVIC_SetPriority(DebugMonitor_IRQn, NVIC_EncodePriority(priority_group, 0, 0));
   /* PendSV_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(PendSV_IRQn, 0, 0);
+  NVIC_SetPriority(PendSV_IRQn, NVIC_EncodePriority(priority_group, 0, 0));
   /* SysTick_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0);
+  NVIC_SetPriority(SysTick_IRQn, NVIC_EncodePriority(priority_group, 0, 0));
 
 
   /* USER CODE END MspInit 1 */

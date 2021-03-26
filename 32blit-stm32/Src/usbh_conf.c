@@ -67,13 +67,13 @@ void HAL_HCD_MspInit(HCD_HandleTypeDef* hcdHandle)
   /* USER CODE BEGIN USB_OTG_HS_MspInit 0 */
 
   /* USER CODE END USB_OTG_HS_MspInit 0 */
-  
+
     /* Peripheral clock enable */
     __HAL_RCC_USB_OTG_HS_CLK_ENABLE();
 
     /* Peripheral interrupt init */
-    HAL_NVIC_SetPriority(OTG_HS_IRQn, 0, 0);
-    HAL_NVIC_EnableIRQ(OTG_HS_IRQn);
+    NVIC_SetPriority(OTG_HS_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(), 0, 0));
+    NVIC_EnableIRQ(OTG_HS_IRQn);
   /* USER CODE BEGIN USB_OTG_HS_MspInit 1 */
 
   /* USER CODE END USB_OTG_HS_MspInit 1 */
@@ -91,7 +91,7 @@ void HAL_HCD_MspDeInit(HCD_HandleTypeDef* hcdHandle)
     //__HAL_RCC_USB_OTG_HS_CLK_DISABLE();
 
     /* Peripheral interrupt Deinit*/
-    HAL_NVIC_DisableIRQ(OTG_HS_IRQn);
+    NVIC_DisableIRQ(OTG_HS_IRQn);
   /* USER CODE BEGIN USB_OTG_HS_MspDeInit 1 */
 
   /* USER CODE END USB_OTG_HS_MspDeInit 1 */
@@ -150,7 +150,7 @@ void HAL_HCD_HC_NotifyURBChange_Callback(HCD_HandleTypeDef *hhcd, uint8_t chnum,
 void HAL_HCD_PortEnabled_Callback(HCD_HandleTypeDef *hhcd)
 {
   USBH_LL_PortEnabled(hhcd->pData);
-} 
+}
 
 /**
   * @brief  Port Port Disabled callback.
@@ -160,7 +160,7 @@ void HAL_HCD_PortEnabled_Callback(HCD_HandleTypeDef *hhcd)
 void HAL_HCD_PortDisabled_Callback(HCD_HandleTypeDef *hhcd)
 {
   USBH_LL_PortDisabled(hhcd->pData);
-} 
+}
 
 /*******************************************************************************
                        LL Driver Interface (USB Host Library --> HCD)
@@ -210,9 +210,9 @@ USBH_StatusTypeDef USBH_LL_DeInit(USBH_HandleTypeDef *phost)
   USBH_StatusTypeDef usb_status = USBH_OK;
 
   hal_status = HAL_HCD_DeInit(phost->pData);
-  
+
   usb_status = USBH_Get_USB_Status(hal_status);
-  
+
   return usb_status;
 }
 
@@ -229,7 +229,7 @@ USBH_StatusTypeDef USBH_LL_Start(USBH_HandleTypeDef *phost)
   hal_status = HAL_HCD_Start(phost->pData);
 
   usb_status = USBH_Get_USB_Status(hal_status);
-  
+
   return usb_status;
 }
 
@@ -246,7 +246,7 @@ USBH_StatusTypeDef USBH_LL_Stop(USBH_HandleTypeDef *phost)
   hal_status = HAL_HCD_Stop(phost->pData);
 
   usb_status = USBH_Get_USB_Status(hal_status);
- 
+
   return usb_status;
 }
 
@@ -291,9 +291,9 @@ USBH_StatusTypeDef USBH_LL_ResetPort(USBH_HandleTypeDef *phost)
   USBH_StatusTypeDef usb_status = USBH_OK;
 
   hal_status = HAL_HCD_ResetPort(phost->pData);
-  
+
   usb_status = USBH_Get_USB_Status(hal_status);
-  
+
   return usb_status;
 }
 
@@ -329,7 +329,7 @@ USBH_StatusTypeDef USBH_LL_OpenPipe(USBH_HandleTypeDef *phost, uint8_t pipe_num,
                                dev_address, speed, ep_type, mps);
 
   usb_status = USBH_Get_USB_Status(hal_status);
-  
+
   return usb_status;
 }
 
@@ -347,7 +347,7 @@ USBH_StatusTypeDef USBH_LL_ClosePipe(USBH_HandleTypeDef *phost, uint8_t pipe)
   hal_status = HAL_HCD_HC_Halt(phost->pData, pipe);
 
   usb_status = USBH_Get_USB_Status(hal_status);
-  
+
   return usb_status;
 }
 
@@ -401,7 +401,7 @@ USBH_StatusTypeDef USBH_LL_SubmitURB(USBH_HandleTypeDef *phost, uint8_t pipe, ui
                                         ep_type, token, pbuff, length,
                                         do_ping);
   usb_status =  USBH_Get_USB_Status(hal_status);
-  
+
   return usb_status;
 }
 

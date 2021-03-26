@@ -7,8 +7,8 @@ namespace gpio {
     HAL_GPIO_Init(port, &gpio);
   }
 
-  // initialises all of the pins of the MCU into the correct 
-  // configuration for 32blit    
+  // initialises all of the pins of the MCU into the correct
+  // configuration for 32blit
   void init()
   {
     /* GPIO Ports Clock Enable */
@@ -67,8 +67,8 @@ namespace gpio {
     init_pin(GPIOD, BUTTON_HOME_Pin, GPIO_MODE_IT_RISING_FALLING, GPIO_PULLDOWN);
 
     /* EXTI interrupt init for channels 9..5 */
-    HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
-    HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
+    NVIC_SetPriority(EXTI9_5_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(), 0, 0));
+    NVIC_EnableIRQ(EXTI9_5_IRQn);
 
     // user hack headers
     init_pin(GPIOC, USER_LEFT1_Pin | USER_RIGHT1_Pin, GPIO_MODE_ANALOG, GPIO_NOPULL); // analog
@@ -77,7 +77,7 @@ namespace gpio {
     // battery sense
     init_pin(GPIOC, BATTERY_SENSE_Pin, GPIO_MODE_ANALOG, GPIO_NOPULL); // battery sense
 
-    
+
     // "gpio" pin on extension header
     init_pin(GPIOC, EXTENSION_GPIO_Pin, GPIO_MODE_OUTPUT_PP, GPIO_NOPULL); // left digital
 

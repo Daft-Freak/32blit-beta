@@ -39,7 +39,7 @@ namespace sound {
     blit::api.channels = channels;
 
     // setup the 22,010Hz audio timer
-    HAL_NVIC_EnableIRQ(TIM6_DAC_IRQn);
+    NVIC_EnableIRQ(TIM6_DAC_IRQn);
     __TIM6_CLK_ENABLE();
 
     TIM_MasterConfigTypeDef sMasterConfig = {0};

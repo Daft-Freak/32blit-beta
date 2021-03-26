@@ -576,13 +576,13 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
     interrupt can fire.
     */
     if(!((&htim2)->Instance->CR1 & TIM_CR1_CEN)){
-      HAL_NVIC_DisableIRQ(TIM2_IRQn);
+      NVIC_DisableIRQ(TIM2_IRQn);
       __HAL_TIM_SetCounter(&htim2, 0);
       __HAL_TIM_SetCompare(&htim2, TIM_CHANNEL_1, long_press_exit_time * 10); // press-to-reset-time
       HAL_TIM_Base_Start(&htim2);
       HAL_TIM_Base_Start_IT(&htim2);
       __HAL_TIM_CLEAR_FLAG(&htim2, TIM_SR_UIF);
-      HAL_NVIC_EnableIRQ(TIM2_IRQn);
+      NVIC_EnableIRQ(TIM2_IRQn);
     }
 
   } else {
@@ -750,15 +750,15 @@ bool blit_switch_execution(uint32_t address, bool force_game)
   USBD_Stop(&hUsbDeviceHS);
 
   // Disable all the interrupts... just to be sure
-  HAL_NVIC_DisableIRQ(LTDC_IRQn);
-  HAL_NVIC_DisableIRQ(ADC_IRQn);
-  HAL_NVIC_DisableIRQ(ADC3_IRQn);
-  HAL_NVIC_DisableIRQ(DMA1_Stream0_IRQn);
-  HAL_NVIC_DisableIRQ(DMA1_Stream1_IRQn);
-  HAL_NVIC_DisableIRQ(TIM6_DAC_IRQn);
-  HAL_NVIC_DisableIRQ(OTG_HS_IRQn);
-  HAL_NVIC_DisableIRQ(EXTI9_5_IRQn);
-  HAL_NVIC_DisableIRQ(TIM2_IRQn);
+  NVIC_DisableIRQ(LTDC_IRQn);
+  NVIC_DisableIRQ(ADC_IRQn);
+  NVIC_DisableIRQ(ADC3_IRQn);
+  NVIC_DisableIRQ(DMA1_Stream0_IRQn);
+  NVIC_DisableIRQ(DMA1_Stream1_IRQn);
+  NVIC_DisableIRQ(TIM6_DAC_IRQn);
+  NVIC_DisableIRQ(OTG_HS_IRQn);
+  NVIC_DisableIRQ(EXTI9_5_IRQn);
+  NVIC_DisableIRQ(TIM2_IRQn);
 
 	volatile uint32_t uAddr = EXTERNAL_LOAD_ADDRESS;
 
