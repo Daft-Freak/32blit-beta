@@ -38,7 +38,10 @@ list(APPEND SOURCES
 	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_pcd_ex.c
 	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_jpeg.c
 	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_hcd.c
+	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_ll_exti.c
+	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_ll_rcc.c
 	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_ll_usb.c
+	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_ll_utils.c
 	Middlewares/Third_Party/FatFs/src/diskio.c
 	Middlewares/Third_Party/FatFs/src/ff.c
 	Middlewares/Third_Party/FatFs/src/ff_gen_drv.c
@@ -143,6 +146,7 @@ set(HAL_INCLUDE_DIRS ${INCLUDE_DIRS} PARENT_SCOPE)
 
 set(DEFINITIONS
 	-DUSE_HAL_DRIVER
+	-DUSE_FULL_LL_DRIVER
 	-DUSE_USB_HS
 	-DSTM32H750xx
 	-DMSC_MEDIA_PACKET=4096
