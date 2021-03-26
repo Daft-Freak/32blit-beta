@@ -25,6 +25,7 @@
 #include "gpio_defs.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include <stdbool.h>
 /* USER CODE END Includes */
 //FIL fil;
 //uint32_t total_samples;
@@ -40,7 +41,7 @@ extern void blit_reset_with_error();
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
- 
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -79,7 +80,7 @@ extern I2C_HandleTypeDef hi2c4;
 /* USER CODE END EV */
 
 /******************************************************************************/
-/*           Cortex Processor Interruption and Exception Handlers          */ 
+/*           Cortex Processor Interruption and Exception Handlers          */
 /******************************************************************************/
 /**
   * @brief This function handles Non maskable interrupt.
@@ -220,15 +221,58 @@ void SysTick_Handler(void)
 /* please refer to the startup file (startup_stm32h7xx.s).                    */
 /******************************************************************************/
 
+// only handles stream 0-4
+inline bool check_dma_flag(DMA_TypeDef *DMA, DMA_Stream_TypeDef *stream, uint32_t isr, int flag, int cr_flag) {
+  bool ret;
+
+  if(cr_flag == DMA_IT_FE)
+    ret = (isr & flag) && (stream->FCR & DMA_IT_FE);
+  else
+    ret = (isr & flag) && (stream->CR & cr_flag);
+
+  DMA->LIFCR = flag;
+
+  return ret;
+}
+
 /**
   * @brief This function handles DMA1 stream0 global interrupt.
   */
 void DMA1_Stream0_IRQHandler(void)
 {
   /* USER CODE BEGIN DMA1_Stream0_IRQn 0 */
+  uint32_t isr = DMA1->LISR;
+  bool error = false;
+
+  // transfer error
+  if(check_dma_flag(DMA1, DMA1_Stream0, isr, DMA_FLAG_TEIF0_4, DMA_IT_TE)) {
+    DMA1_Stream0->CR  &= ~DMA_IT_TE;
+    // HAL code disables after this...
+
+    error = true;
+  }
+
+  // fifo error
+  if(check_dma_flag(DMA1, DMA1_Stream0, isr, DMA_FLAG_FEIF0_4, DMA_IT_FE))
+    error = true;
+
+  // direct mode error
+  if(check_dma_flag(DMA1, DMA1_Stream0, isr, DMA_FLAG_DMEIF0_4, DMA_IT_DME))
+    error = true;
+
+  // half complete
+  if(check_dma_flag(DMA1, DMA1_Stream0, isr, DMA_FLAG_HTIF0_4, DMA_IT_HT))
+    ADC_DMAHalfConvCplt(&hdma_adc1);
+
+  // complete
+  if(check_dma_flag(DMA1, DMA1_Stream0, isr, DMA_FLAG_TCIF0_4, DMA_IT_TC))
+    ADC_DMAConvCplt(&hdma_adc1);
+
+  if(error)
+    ADC_DMAError(&hdma_adc1);
 
   /* USER CODE END DMA1_Stream0_IRQn 0 */
-  HAL_DMA_IRQHandler(&hdma_adc1);
+
   /* USER CODE BEGIN DMA1_Stream0_IRQn 1 */
 
   /* USER CODE END DMA1_Stream0_IRQn 1 */
@@ -240,9 +284,38 @@ void DMA1_Stream0_IRQHandler(void)
 void DMA1_Stream1_IRQHandler(void)
 {
   /* USER CODE BEGIN DMA1_Stream1_IRQn 0 */
+  uint32_t isr = DMA1->LISR;
+  bool error = false;
+
+  // transfer error
+  if(check_dma_flag(DMA1, DMA1_Stream1, isr, DMA_FLAG_TEIF1_5, DMA_IT_TE)) {
+    DMA1_Stream0->CR  &= ~DMA_IT_TE;
+    // HAL code disables after this...
+
+    error = true;
+  }
+
+  // fifo error
+  if(check_dma_flag(DMA1, DMA1_Stream1, isr, DMA_FLAG_FEIF1_5, DMA_IT_FE))
+    error = true;
+
+  // direct mode error
+  if(check_dma_flag(DMA1, DMA1_Stream1, isr, DMA_FLAG_DMEIF1_5, DMA_IT_DME))
+    error = true;
+
+  // half complete
+  if(check_dma_flag(DMA1, DMA1_Stream1, isr, DMA_FLAG_HTIF1_5, DMA_IT_HT))
+    ADC_DMAHalfConvCplt(&hdma_adc3);
+
+  // complete
+  if(check_dma_flag(DMA1, DMA1_Stream1, isr, DMA_FLAG_TCIF1_5, DMA_IT_TC))
+    ADC_DMAConvCplt(&hdma_adc3);
+
+  if(error)
+    ADC_DMAError(&hdma_adc3);
 
   /* USER CODE END DMA1_Stream1_IRQn 0 */
-  HAL_DMA_IRQHandler(&hdma_adc3);
+
   /* USER CODE BEGIN DMA1_Stream1_IRQn 1 */
 
   /* USER CODE END DMA1_Stream1_IRQn 1 */
