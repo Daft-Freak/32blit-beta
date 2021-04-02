@@ -3,6 +3,10 @@
 #include "hardware/clocks.h"
 #include "pico/stdlib.h"
 #include "pico/audio_i2s.h"
+#ifdef DISPLAY_SCANVIDEO
+#include "pico/scanvideo.h"
+#include "pico/scanvideo/composable_scanline.h"
+#endif
 
 #include "input.hpp"
 #include "st7789.hpp"
@@ -13,10 +17,15 @@
 
 using namespace blit;
 
+#ifdef DISPLAY_ST7789
 uint8_t screen_fb[240 * 240 * 2];
 static Surface lores_screen(screen_fb, PixelFormat::RGB565, Size(160, 120));
 static Surface hires_screen(screen_fb, PixelFormat::RGB565, Size(240, 240));
 //static Surface hires_palette_screen(screen_fb, PixelFormat::P, Size(320, 240));
+#elif defined(DISPLAY_SCANVIDEO)
+uint8_t screen_fb[160 * 120 * 4];
+static Surface lores_screen(screen_fb, PixelFormat::RGB565, Size(160, 120));
+#endif
 
 static blit::AudioChannel channels[CHANNEL_COUNT];
 
@@ -37,8 +46,8 @@ static Surface &set_screen_mode(ScreenMode mode) {
       break;
 
     case ScreenMode::hires:
-      screen = hires_screen;
 #ifdef DISPLAY_ST7789
+      screen = hires_screen;
       st7789.set_window(0, 0, 240, 240);
 #endif
       break;
@@ -110,7 +119,7 @@ static struct audio_buffer_pool *init_audio() {
       .data_pin = PICO_AUDIO_I2S_DATA_PIN,
       .clock_pin_base = PICO_AUDIO_I2S_CLOCK_PIN_BASE,
       .dma_channel = 1,
-      .pio_sm = 0,
+      .pio_sm = 1,
     };
 
     output_format = audio_i2s_setup(&audio_format, &config);
@@ -126,6 +135,60 @@ static struct audio_buffer_pool *init_audio() {
   return nullptr;
 #endif
 }
+
+#ifdef DISPLAY_SCANVIDEO
+
+static volatile bool do_render = true;
+static volatile int buf_index = 0;
+
+static void fill_scanline_buffer(struct scanvideo_scanline_buffer *buffer) {
+  static uint32_t postamble[] = {
+    0x0000u | (COMPOSABLE_EOL_ALIGN << 16)
+  };
+
+  int w = screen.bounds.w;
+
+  buffer->data[0] = 4;
+  buffer->data[1] = host_safe_hw_ptr(buffer->data + 8);
+  buffer->data[2] = (w - 4) / 2; // first four pixels are handled separately
+  uint16_t *pixels = ((uint16_t *)screen_fb) + buf_index * (160 * 120) + scanvideo_scanline_number(buffer->scanline_id) * w;
+  buffer->data[3] = host_safe_hw_ptr(pixels + 4);
+  buffer->data[4] = count_of(postamble);
+  buffer->data[5] = host_safe_hw_ptr(postamble);
+  buffer->data[6] = 0;
+  buffer->data[7] = 0;
+  buffer->data_used = 8;
+
+  // 3 pixel run followed by main run, consuming the first 4 pixels
+  buffer->data[8] = (pixels[0] << 16u) | COMPOSABLE_RAW_RUN;
+  buffer->data[9] = (pixels[1] << 16u) | 0;
+  buffer->data[10] = (COMPOSABLE_RAW_RUN << 16u) | pixels[2];
+  buffer->data[11] = (((w - 3) + 1 - 3) << 16u) | pixels[3]; // note we add one for the black pixel at the end
+}
+
+static int64_t timer_callback(alarm_id_t alarm_id, void *user_data) {
+  static int last_frame = 0;
+  struct scanvideo_scanline_buffer *buffer = scanvideo_begin_scanline_generation(false);
+  while (buffer) {
+    fill_scanline_buffer(buffer);
+    scanvideo_end_scanline_generation(buffer);
+
+    auto next_frame = scanvideo_frame_number(scanvideo_get_next_scanline_id());
+    if(next_frame != last_frame) {
+    //if(scanvideo_in_vblank() && !do_render) {
+      do_render = true;
+      last_frame = next_frame;
+      break;
+    }
+
+    buffer = scanvideo_begin_scanline_generation(false);
+  }
+
+
+  return 100;
+}
+#endif
+
 
 int main() {
   set_sys_clock_khz(250000, false);
@@ -189,6 +252,13 @@ int main() {
   st7789.clear();
 #endif
 
+#ifdef DISPLAY_SCANVIDEO
+  //scanvideo_setup(&vga_mode_320x240_60); // not quite
+  scanvideo_setup(&vga_mode_160x120_60);
+  scanvideo_timing_enable(true);
+  add_alarm_in_us(100, timer_callback, nullptr, true);
+#endif
+
   init_input();
 
   ::set_screen_mode(ScreenMode::lores);
@@ -230,6 +300,13 @@ int main() {
       ::render(now);
       st7789.update();
       last_render = now;
+    }
+#elif defined(DISPLAY_SCANVIDEO)
+    if(do_render) {
+      screen.data = screen_fb + (buf_index ^ 1) * (160 * 120 * 2); // only works because there's no "firmware" here
+      ::render(now);
+      buf_index ^= 1;
+      do_render = false;
     }
 #endif
   }
