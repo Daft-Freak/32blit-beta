@@ -194,6 +194,12 @@ SECTIONS
     _flash_end = .;
   } > FLASH
 
+  /* after the end symbol as this used to be appended after linking */
+  .metadata :
+  {
+    KEEP (*(.blitmeta))
+  } >FLASH
+
   .ltdc (NOLOAD):
   {
     . = ALIGN(4);

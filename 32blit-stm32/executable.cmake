@@ -65,11 +65,21 @@ function(blit_metadata TARGET FILE)
 		set(BLIT_FILENAME $<TARGET_FILE_BASE_NAME:${TARGET}>.blit)
 	endif()
 
+	# generate metadata blob and embed using the linker
+	set(METADATA_OBJECT ${CMAKE_CURRENT_BINARY_DIR}/metadata.o)
+
 	add_custom_command(
-		TARGET ${TARGET} POST_BUILD
-		COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR} && ${PYTHON_EXECUTABLE} -m ttblit metadata --config ${FILE} --file ${CMAKE_CURRENT_BINARY_DIR}/${BLIT_FILENAME}
+		DEPENDS ${FILE} ${METADATA_DEPENDS}
+		COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR} && ${PYTHON_EXECUTABLE} -m ttblit metadata --force --config ${FILE} --metadata-file ${CMAKE_CURRENT_BINARY_DIR}/metadata.bin
+		COMMAND ${CMAKE_OBJCOPY} -I binary -O elf32-littlearm --rename-section .data=.blitmeta ${CMAKE_CURRENT_BINARY_DIR}/metadata.bin ${METADATA_OBJECT}
+		OUTPUT ${METADATA_OBJECT}
 	)
 
-	# force relink on change so that the post-build commands are rerun
-	set_property(TARGET ${TARGET} APPEND PROPERTY LINK_DEPENDS ${FILE} ${METADATA_DEPENDS})
+	target_sources(${TARGET} PRIVATE ${METADATA_OBJECT})
+
+	# fix the checksum post-build
+	add_custom_command(
+		TARGET ${TARGET} POST_BUILD
+		COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR} && ${PYTHON_EXECUTABLE} -m ttblit metadata --file ${CMAKE_CURRENT_BINARY_DIR}/${BLIT_FILENAME} --fix-checksum
+	)
 endfunction()
