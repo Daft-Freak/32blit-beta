@@ -86,6 +86,20 @@ namespace blit {
     // catch up on updates if any pending
     pending_update_time += (time - last_tick_time);
     while (pending_update_time >= update_rate_ms) {
+
+      // joystick -> dpad mapping
+      if(joystick_dpad_threshold < 1.0f) {
+        if(api.joystick.x < -joystick_dpad_threshold)
+          api.buttons.state |= Button::DPAD_LEFT;
+        else if(api.joystick.x > joystick_dpad_threshold)
+          api.buttons.state |= Button::DPAD_RIGHT;
+
+        if(api.joystick.y < -joystick_dpad_threshold)
+          api.buttons.state |= Button::DPAD_UP;
+        else if(api.joystick.y > joystick_dpad_threshold)
+          api.buttons.state |= Button::DPAD_DOWN;
+      }
+
       // button state changes
       uint32_t changed = api.buttons.state ^ last_state;
 

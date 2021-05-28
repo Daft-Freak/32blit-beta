@@ -34,5 +34,7 @@ namespace blit {
     uint32_t pressed, released; // state change since last update
   };
 
+  extern float joystick_dpad_threshold;
+
   extern bool pressed(uint32_t button);
 }
