@@ -16,7 +16,7 @@ namespace blit {
   void set_screen_mode(ScreenMode new_mode) {
     auto &new_screen = api.set_screen_mode(new_mode);
     screen = Surface(new_screen.data, new_screen.format, new_screen.bounds);
-    screen.palette = new_screen.palette;
+    screen.palette = std::shared_ptr<Pen[]>(new_screen.palette, [](auto &){});
   }
 
   void set_screen_palette(const Pen *colours, int num_cols) {

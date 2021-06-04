@@ -267,21 +267,14 @@ void load_current_game_metadata() {
   if(selected_game.type == GameType::screenshot) {
     if(selected_game.filename != current_screenshot) {
       // Free any old buffers
-      if(screenshot) {
-        delete[] screenshot->palette;
-        delete screenshot;
-        screenshot = nullptr;
-      }
+      delete screenshot;
       // Load the new screenshot
       screenshot = Surface::load(selected_game.filename, screenshot_buf, sizeof(screenshot_buf));
     }
   } else {
     // Not showing a screenshot, free the buffers
-    if(screenshot) {
-      delete[] screenshot->palette;
-      delete screenshot;
-      screenshot = nullptr;
-    }
+    delete screenshot;
+    screenshot = nullptr;
   }
 
   // no valid metadata, reset

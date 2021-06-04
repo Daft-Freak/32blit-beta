@@ -21,7 +21,7 @@ namespace blit {
 
   struct SurfaceInfo {
     SurfaceInfo() = default;
-    SurfaceInfo(const Surface &surf): data(surf.data), bounds(surf.bounds), format(surf.format), palette(surf.palette) {}
+    SurfaceInfo(const Surface &surf): data(surf.data), bounds(surf.bounds), format(surf.format), palette(surf.palette.get()) {}
 
     uint8_t *data = nullptr;
     Size bounds;

@@ -76,7 +76,7 @@ namespace display {
   bool need_ltdc_mode_update = false;
 
   void init() {
-    __fb_hires_pal.palette = palette;
+    __fb_hires_pal.palette = std::shared_ptr<Pen[]>(palette, [](auto &){});
 
     // TODO: replace interrupt setup with non HAL method
     HAL_NVIC_SetPriority(LTDC_IRQn, 4, 4);

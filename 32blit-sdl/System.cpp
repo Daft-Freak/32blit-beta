@@ -148,7 +148,7 @@ System::System() {
 	s_loop_redraw = SDL_CreateSemaphore(0);
 	s_loop_ended = SDL_CreateSemaphore(0);
 
-	__fb_hires_pal.palette = palette;
+	__fb_hires_pal.palette = std::shared_ptr<blit::Pen[]>(palette, [](auto &){});
 }
 
 System::~System() {

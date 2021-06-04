@@ -16,14 +16,12 @@ struct BlitGameMetadata {
   void free_surfaces() {
     if(icon) {
       delete[] icon->data;
-      delete[] icon->palette;
       delete icon;
       icon = nullptr;
     }
 
     if(splash) {
       delete[] splash->data;
-      delete[] splash->palette;
       delete splash;
       splash = nullptr;
     }

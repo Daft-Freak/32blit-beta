@@ -640,8 +640,8 @@ namespace blit {
 
     if (format == PixelFormat::P || !is_raw) {
       // load palette
-      ret->palette = new Pen[256];
-      file.read(offset, palette_entry_count * 4, (char *)ret->palette);
+      ret->palette.reset(new Pen[256]);
+      file.read(offset, palette_entry_count * 4, (char *)ret->palette.get());
       offset += palette_entry_count * 4;
     }
 
@@ -753,7 +753,6 @@ namespace blit {
       }
 
       // unpacked, no longer needed
-      delete[] ret->palette;
       ret->palette = nullptr;
     }
 
@@ -823,11 +822,11 @@ namespace blit {
     }
 
     if(format == PixelFormat::P) {
-      ret->palette = new Pen[256];
+      ret->palette.reset(new Pen[256]);
       int palette_cols = header.palette_cols;
       if(!palette_cols) palette_cols = 256;
 
-      file.read(header.info_size + 14, palette_cols * 4, (char *)ret->palette);
+      file.read(header.info_size + 14, palette_cols * 4, (char *)ret->palette.get());
 
       // R/B swap
       for(int i = 0; i < palette_cols; i++)
