@@ -118,36 +118,40 @@ bool parse_file_metadata(const std::string &filename, BlitGameMetadata &metadata
   blit::File f(filename);
   uint32_t offset = 0;
 
-  BlitGameHeader header;
-  auto read = f.read(offset, sizeof(header), (char *)&header);
+  uint8_t buf[sizeof(BlitGameHeader)];
+  auto read = f.read(offset, sizeof(buf), (char *)&buf);
 
   // skip relocation data
-  if(header.magic == 0x4F4C4552 /* RELO */) {
+  if(memcmp(buf, "RELO", 4) == 0) {
     uint32_t num_relocs;
     f.read(4, 4, (char *)&num_relocs);
 
     offset = num_relocs * 4 + 8;
     // re-read header
-    read = f.read(offset, sizeof(header), (char *)&header);
+    read = f.read(offset, sizeof(buf), (char *)&buf);
   }
 
-  if(read == sizeof(header) && header.magic == blit_game_magic) {
-    uint8_t buf[10];
-
-    offset += (header.end & 0x1FFFFFF);
-    auto bytes_read = f.read(offset, 10, (char *)buf);
-
-    if(bytes_read == 10 && memcmp(buf, "BLITMETA", 8) == 0) {
-      // don't bother reading the whole thing if we don't want the images
-      auto metadata_len = unpack_images ? *reinterpret_cast<uint16_t *>(buf + 8) : sizeof(RawMetadata);
-
-      uint8_t metadata_buf[0xFFFF];
-      f.read(offset + 10, metadata_len, (char *)metadata_buf);
-
-      parse_metadata(reinterpret_cast<char *>(metadata_buf), metadata_len, metadata, unpack_images);
-
-      return true;
+  // game header - skip to metadata
+  if(memcmp(buf, "BLITMETA", 8) != 0) {
+    auto &header = *(BlitGameHeader *)buf;
+    if(read == sizeof(BlitGameHeader) && header.magic == blit_game_magic) {
+      offset += (header.end & 0x1FFFFFF);
+      read = f.read(offset, 10, (char *)buf);
     }
+  }
+
+  blit::debugf("head %i %c%c%c%c%c%c%c%c\n", read, buf[0], buf[1], buf[2], buf[3], buf[4], buf[5], buf[6], buf[7]);
+
+  if(read >= 10 && memcmp(buf, "BLITMETA", 8) == 0) {
+    // don't bother reading the whole thing if we don't want the images
+    auto metadata_len = unpack_images ? *reinterpret_cast<uint16_t *>(buf + 8) : sizeof(RawMetadata);
+
+    uint8_t metadata_buf[0xFFFF];
+    f.read(offset + 10, metadata_len, (char *)metadata_buf);
+
+    parse_metadata(reinterpret_cast<char *>(metadata_buf), metadata_len, metadata, unpack_images);
+
+    return true;
   }
 
   return false;
