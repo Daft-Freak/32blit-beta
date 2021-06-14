@@ -19,12 +19,21 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
+    - name: Cache
+      uses: actions/cache@v2
+      with:
+        path: /home/runner/.ccache
+        key: ccache-${{matrix.cache-key}}-${{github.ref}}-${{github.sha}}
+        restore-keys: |
+          ccache-${{matrix.cache-key}}-${{github.ref}}
+          ccache-${{matrix.cache-key}}-
+
     - name: Install deps
       run: |
         sudo apt update && sudo apt install doxygen graphviz python3-setuptools
         pip3 install 32blit
 
-    - name: Setup cache
+    - name: Setup Emscripten cache
       id: cache-system-libraries
       uses: actions/cache@v2
       with:
@@ -36,6 +45,9 @@ jobs:
       with:
         version: ${{env.EM_VERSION}}
         actions-cache-folder: ${{env.EM_CACHE_FOLDER}}
+        
+    - name: Setup CCache
+      run: emsdk install ccache && emsdk activate ccache
 
     - name: Create Build Environment
       run: cmake -E make_directory ${{runner.workspace}}/build
@@ -57,8 +69,10 @@ jobs:
       working-directory: ${{runner.workspace}}/build
       shell: bash
       run: |
+        ccache --zero-stats
         embuilder.py build sdl2 sdl2-image-jpg sdl2-net
         cmake --build . --config $BUILD_TYPE -j 2
+        ccache --show-stats
 
     # build the docs
     - name: Build Docs
