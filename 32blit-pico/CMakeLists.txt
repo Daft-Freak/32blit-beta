@@ -24,6 +24,12 @@ if(${PICO_BOARD} STREQUAL "vgaboard")
 		AUDIO_I2S
 		DISPLAY_SCANVIDEO
 	)
+elseif(${PICO_BOARD} STREQUAL "pimoroni_picosystem")
+	message("Using picosystem...")
+	target_compile_definitions(BlitHalPico INTERFACE
+		DISPLAY_ST7789
+		INPUT_GPIO
+	)
 else()
 	message(WARNING "Using default config for \"${PICO_BOARD}\"...")
 	# messy explorer-based setup
