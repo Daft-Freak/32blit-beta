@@ -6,6 +6,7 @@ pico_sdk_init()
 add_library(BlitHalPico INTERFACE)
 target_sources(BlitHalPico INTERFACE
 	${CMAKE_CURRENT_LIST_DIR}/input.cpp
+	${CMAKE_CURRENT_LIST_DIR}/led.cpp
 	${CMAKE_CURRENT_LIST_DIR}/main.cpp
 	${CMAKE_CURRENT_LIST_DIR}/st7789.cpp
 )
