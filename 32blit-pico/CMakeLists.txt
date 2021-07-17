@@ -10,6 +10,9 @@ target_sources(BlitHalPico INTERFACE
 	${CMAKE_CURRENT_LIST_DIR}/main.cpp
 	${CMAKE_CURRENT_LIST_DIR}/st7789.cpp
 )
+
+pico_generate_pio_header(BlitHalPico ${CMAKE_CURRENT_LIST_DIR}/st7789.pio)
+
 target_link_libraries(BlitHalPico INTERFACE hardware_dma hardware_pwm hardware_spi pico_stdlib pico_audio_i2s)
 
 target_compile_definitions(BlitHalPico INTERFACE
