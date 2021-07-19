@@ -39,6 +39,8 @@ pimoroni::ST7789 st7789(240, 240, (uint16_t *)screen_fb);
 #endif
 
 ScreenMode cur_screen_mode = ScreenMode::lores;
+// double buffering for lores
+static volatile int buf_index = 0;
 
 static Surface &set_screen_mode(ScreenMode mode) {
   switch(mode) {
@@ -53,6 +55,7 @@ static Surface &set_screen_mode(ScreenMode mode) {
     case ScreenMode::hires:
 #ifdef DISPLAY_ST7789
       screen = hires_screen;
+      st7789.frame_buffer = (uint16_t *)screen_fb;
       st7789.set_pixel_double(false);
 #endif
       break;
@@ -144,7 +147,6 @@ static struct audio_buffer_pool *init_audio() {
 #ifdef DISPLAY_SCANVIDEO
 
 static volatile bool do_render = true;
-static volatile int buf_index = 0;
 
 static void fill_scanline_buffer(struct scanvideo_scanline_buffer *buffer) {
   static uint32_t postamble[] = {
@@ -302,10 +304,17 @@ int main() {
     auto now = ::now();
 
 #ifdef DISPLAY_ST7789
-    if(now - last_render >= 20 && !st7789.dma_is_busy()) {
+    if(now - last_render >= 20 && (cur_screen_mode == ScreenMode::lores || !st7789.dma_is_busy())) {
       ::render(now);
       st7789.update();
       last_render = now;
+
+      if(cur_screen_mode == ScreenMode::lores) {
+        buf_index ^= 1;
+
+        screen.data = screen_fb + (buf_index) * (120 * 120 * 2);
+        st7789.frame_buffer = (uint16_t *)screen.data;
+      }
     }
 #elif defined(DISPLAY_SCANVIDEO)
     if(do_render) {
