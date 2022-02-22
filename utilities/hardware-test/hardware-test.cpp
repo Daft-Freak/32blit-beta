@@ -34,10 +34,11 @@ void render(uint32_t time) {
     bool dpad_u = blit::buttons & blit::Button::DPAD_UP;
     bool dpad_d = blit::buttons & blit::Button::DPAD_DOWN;
 
-    for(int b = 0; b < SCREEN_WIDTH; b++){
-        for(int v = 0; v < SCREEN_HEIGHT; v++){
-            screen.pen = blit::hsv_to_rgba(float(b) / (float)(SCREEN_WIDTH), 1.0f, float(v) / (float)(SCREEN_HEIGHT));
-            screen.pixel(Point(b, v));
+    int s = 8;
+    for(int b = 0; b < screen.bounds.w; b+=s){
+        for(int v = 0; v < screen.bounds.h; v+=s){
+            screen.pen = hsv_to_rgba(float(b) / (float)(screen.bounds.w), 1.0f, float(v) / (float)(screen.bounds.h));
+            screen.rectangle({b, v, s, s});
         }
     }
 
@@ -141,8 +142,55 @@ void render(uint32_t time) {
         (float)((cosf(blit::now() / 100.0f) + 1) / 2.0f),
         (float)((sinf(blit::now() / 100.0f) + 1) / 2.0f)
     );
+
+#ifdef INPUT_USB_HID
+    extern uint32_t hid_buttons;
+    int x = COL2;
+
+    screen.text("HID:", minimal_font, {COL1, 110});
+
+    for(int i = 0; i < 32; i++) {
+        if(hid_buttons & (1 << i)) {
+            screen.text(std::to_string(i), minimal_font, {x, 110});
+
+            x += 10;
+        }
+    }
+#endif
 }
 
 void update(uint32_t time) {
 
+    const char *labels[]{
+      "L","R", "U", "D",
+      "A", "B", "X", "Y",
+      "MENU", "HOME",
+      "JOYSTICK"
+    };
+
+
+    if(blit::buttons.pressed || blit::buttons.released) {
+        blit::debugf("buttons:");
+        for(int i = 0; i < 11; i++) {
+            if(blit::buttons & (1 << i))
+                blit::debugf(" %s", labels[i]);
+        }
+        blit::debugf("\n");
+    }
+
+#ifdef INPUT_USB_HID
+    static uint32_t last_hid = 0;
+
+    extern uint32_t hid_buttons;
+
+    if(last_hid != hid_buttons) {
+        blit::debugf("HID buttons: ");
+        for(int i = 0; i < 32; i++) {
+            if(hid_buttons & (1 << i))
+                blit::debugf(" %i", i);
+        }
+        blit::debugf("\n");
+        last_hid = hid_buttons;
+    }
+#endif
 }
