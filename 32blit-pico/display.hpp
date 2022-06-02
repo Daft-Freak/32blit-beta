@@ -12,6 +12,7 @@ extern bool fb_double_buffer;
 #ifndef BLIT_BOARD_PIMORONI_PICOVISION
 extern uint16_t screen_fb[];
 #endif
+extern uint16_t screen_palette565[];
 
 int get_display_page_size();
 void init_display();
