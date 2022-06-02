@@ -104,7 +104,7 @@ namespace st7789 {
   }
 
   // used for pixel doubling
-  static void __isr st7789_dma_irq_handler() {
+  static void __isr double_dma_irq_handler() {
     if(dma_channel_get_irq0_status(dma_channel)) {
       dma_channel_acknowledge_irq0(dma_channel);
 
@@ -297,7 +297,7 @@ namespace st7789 {
     dma_channel_configure(
       dma_channel, &config, &pio->txf[pio_sm], frame_buffer, width * height, false);
 
-    irq_add_shared_handler(DMA_IRQ_0, st7789_dma_irq_handler, PICO_SHARED_IRQ_HANDLER_DEFAULT_ORDER_PRIORITY);
+    irq_add_shared_handler(DMA_IRQ_0, double_dma_irq_handler, PICO_SHARED_IRQ_HANDLER_DEFAULT_ORDER_PRIORITY);
     irq_set_enabled(DMA_IRQ_0, true);
   }
 
