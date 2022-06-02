@@ -19,9 +19,8 @@ uint16_t screen_fb[FRAMEBUFFER_SIZE];
 static const uint32_t max_fb_size = FRAMEBUFFER_SIZE * sizeof(uint16_t);
 #endif
 
-// TODO: this is wasting 1.5k if you're not using paletted modes
-static Pen screen_palette[256];
-uint16_t screen_palette565[256];
+static Pen *screen_palette = nullptr;
+uint16_t *screen_palette565 = nullptr;
 
 static const Size lores_screen_size(DISPLAY_WIDTH / 2, DISPLAY_HEIGHT / 2);
 static const Size hires_screen_size(DISPLAY_WIDTH, DISPLAY_HEIGHT);
@@ -30,6 +29,14 @@ ScreenMode cur_screen_mode = ScreenMode::lores;
 
 int get_display_page_size() {
   return max_fb_size / 2;
+}
+
+static void init_palette() {
+  if(!screen_palette) {
+    // allocate on first use
+    screen_palette = new Pen[256];
+    screen_palette565 = new uint16_t[256]();
+  }
 }
 
 // blit api
@@ -92,6 +99,8 @@ bool set_screen_mode_format(ScreenMode new_mode, SurfaceTemplate &new_surf_templ
 
   if(new_surf_template.format == PixelFormat::P) {
 #ifdef DISPLAY_PICODVI // only handled here so far
+
+    init_palette();
     new_surf_template.palette = screen_palette;
 
     // update converted palette
@@ -119,6 +128,7 @@ bool set_screen_mode_format(ScreenMode new_mode, SurfaceTemplate &new_surf_templ
 }
 
 void set_screen_palette(const Pen *colours, int num_cols) {
+  init_palette();
   memcpy(screen_palette, colours, num_cols * sizeof(Pen));
 
   for(int i = 0; i < num_cols; i++)

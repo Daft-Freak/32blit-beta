@@ -14,7 +14,7 @@ extern uint16_t *screen_fb;
 #else
 extern uint16_t screen_fb[];
 #endif
-extern uint16_t screen_palette565[];
+extern uint16_t *screen_palette565;
 
 int get_display_page_size();
 void init_display();
