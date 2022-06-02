@@ -78,13 +78,14 @@ bool set_screen_mode_format(ScreenMode new_mode, SurfaceTemplate &new_surf_templ
       break;
     case ScreenMode::hires:
     case ScreenMode::hires_palette:
-#if ALLOW_HIRES
       if(new_surf_template.bounds.empty())
         new_surf_template.bounds = hires_screen_size;
-
+#if ALLOW_HIRES
       break;
 #else
-      return false; // no hires for scanvideo
+      // can squeeze single-buffered hires paletted into the double-buffered lores fb
+      if(new_surf_template.format != PixelFormat::P)
+        return false;
 #endif
   }
 
