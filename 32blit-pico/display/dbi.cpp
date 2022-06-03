@@ -97,6 +97,7 @@ static uint16_t win_w, win_h; // window size
 
 static bool write_mode = false; // in RAMWR
 static bool pixel_double = false;
+static bool paletted = false;
 static uint16_t *upd_frame_buffer = nullptr;
 
 // frame buffer where pixel data is stored
@@ -122,12 +123,19 @@ static void pio_wait(PIO pio, uint sm) {
   while(!(pio->fdebug & stall_mask));
 }
 
+
 static inline void transpose_data(const uint16_t *in, uint16_t *out, int count, int stride) {
   auto end = out + count;
   do {
     *out++ = *in;
     in += stride;
   } while(out != end);
+}
+
+// palette lookup
+static inline void convert_paletted(const uint8_t *in, uint16_t *out, int count) {
+  for(int i = 0; i < count; i++)
+    *out++ = screen_palette565[*in++];
 }
 
 // used for pixel doubling
@@ -197,11 +205,62 @@ static void __isr transposed_dma_irq_handler() {
   }
 }
 
+static void __isr double_palette_dma_irq_handler() {
+  if(dma_channel_get_irq0_status(dma_channel)) {
+    dma_channel_acknowledge_irq0(dma_channel);
+
+    if(cur_scanline > win_h / 2)
+      return;
+
+    // num pixels
+    auto count = cur_scanline == (win_h + 1) / 2 ? win_w / 2 : win_w;
+
+    // start from buffer 0 (to repeat first line)
+    int palette_buf_idx = cur_scanline & 1;
+
+    dma_channel_set_trans_count(dma_channel, count / 2, false);
+    dma_channel_set_read_addr(dma_channel, temp_buffer + (win_w / 2) * (palette_buf_idx ^ 1), true);
+
+    // prepare next lines
+    if(++cur_scanline > win_h / 2)
+      return;
+
+    auto in = (uint8_t *)upd_frame_buffer + (cur_scanline - 1) * (win_w / 2);
+    auto out = (uint16_t *)temp_buffer + palette_buf_idx * win_w;
+    convert_paletted(in, out, cur_scanline == (win_h + 1) / 2 ? win_w / 2 : win_w);
+  }
+}
+
+static void __isr palette_dma_irq_handler() {
+  if(dma_channel_get_irq0_status(dma_channel)) {
+    dma_channel_acknowledge_irq0(dma_channel);
+
+    if(cur_scanline >= win_h)
+      return;
+
+    // start from buffer 1
+    int palette_buf_idx = cur_scanline & 1;
+
+    dma_channel_set_trans_count(dma_channel, win_w, false);
+    dma_channel_set_read_addr(dma_channel, temp_buffer + (win_w / 2) * palette_buf_idx, true);
+
+    // prepare next line
+    if(++cur_scanline >= win_h)
+      return;
+
+    auto in = (uint8_t *)upd_frame_buffer + (cur_scanline) * win_w;
+    auto out = (uint16_t *)temp_buffer + (palette_buf_idx ^ 1) * win_w;
+    convert_paletted(in, out, win_w);
+  }
+}
+
 // set DMA irq handler for pixel doubling/palette lookup
 static void update_irq_handler() {
   irq_handler_t new_handler;
 
-  if(LCD_TRANSPOSE)
+  if(paletted)
+      new_handler = pixel_double ? double_palette_dma_irq_handler : palette_dma_irq_handler;
+  else if(LCD_TRANSPOSE)
     new_handler = pixel_double ? double_transposed_dma_irq_handler : transposed_dma_irq_handler;
   else
     new_handler = double_dma_irq_handler;
@@ -416,6 +475,18 @@ static void update() {
 
   upd_frame_buffer = frame_buffer;
 
+  // paletted needs conversion
+  if(paletted) {
+    // first two lines
+    convert_paletted((uint8_t *)frame_buffer, (uint16_t *)temp_buffer, pixel_double ? win_w : win_w * 2);
+    cur_scanline = 1;
+
+    int count = pixel_double ? win_w / 4 : win_w;
+    dma_channel_set_trans_count(dma_channel, count, false);
+    dma_channel_set_read_addr(dma_channel, temp_buffer, true);
+    return;
+  }
+
   if(LCD_TRANSPOSE) {
     // setup first two lines
     auto stride = pixel_double ? win_h / 2 : win_h;
@@ -469,11 +540,26 @@ static void set_pixel_double(bool pd) {
   dma_channel_set_irq0_enabled(dma_channel, false);
   update_irq_handler();
 
-  if(pixel_double || LCD_TRANSPOSE) {
+  if(pixel_double || LCD_TRANSPOSE || paletted) {
     dma_channel_acknowledge_irq0(dma_channel);
     dma_channel_set_irq0_enabled(dma_channel, true);
   } else
     dma_channel_set_irq0_enabled(dma_channel, false);
+}
+
+static void set_palette_mode(bool pal) {
+  if(paletted == pal)
+    return;
+
+  paletted = pal;
+
+  dma_channel_set_irq0_enabled(dma_channel, false);
+  update_irq_handler();
+
+  if(pixel_double || LCD_TRANSPOSE || paletted) {
+    dma_channel_acknowledge_irq0(dma_channel);
+    dma_channel_set_irq0_enabled(dma_channel, true);
+  }
 }
 
 static void clear() {
@@ -487,7 +573,7 @@ static void clear() {
 static bool dma_is_busy() {
   if(pixel_double && cur_scanline <= win_h / 2)
     return true;
-  else if(LCD_TRANSPOSE && !pixel_double && cur_scanline < win_h)
+  else if((LCD_TRANSPOSE || paletted) && !pixel_double && cur_scanline < win_h)
       return true;
 
   return dma_channel_is_busy(dma_channel);
@@ -654,7 +740,8 @@ bool display_render_needed() {
 }
 
 bool display_mode_supported(blit::ScreenMode new_mode, const blit::SurfaceTemplate &new_surf_template) {
-  if(new_surf_template.format != blit::PixelFormat::RGB565)
+  // we don't handle transpose + pallete lookup
+  if(new_surf_template.format != blit::PixelFormat::RGB565 && (new_surf_template.format != blit::PixelFormat::P || LCD_TRANSPOSE))
     return false;
 
   // TODO: could allow smaller sizes with window
@@ -671,6 +758,7 @@ void display_mode_changed(blit::ScreenMode new_mode, blit::SurfaceTemplate &new_
     do_render = true; // prevent starting an update during switch
 
   set_pixel_double(new_mode == ScreenMode::lores);
+  set_palette_mode(new_surf_template.format == PixelFormat::P);
 
   if(new_mode == ScreenMode::hires)
     frame_buffer = screen_fb;
