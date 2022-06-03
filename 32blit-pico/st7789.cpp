@@ -81,10 +81,15 @@ namespace st7789 {
 
   static bool write_mode = false; // in RAMWR
   static bool pixel_double = false;
+  static bool paletted = false;
   static uint16_t *upd_frame_buffer = nullptr;
+
+  // two scanlines of converted palette data (uint32 for alignment)
+  static uint32_t *palette_tmp_buf = nullptr;
 
   // frame buffer where pixel data is stored
   uint16_t *frame_buffer = nullptr;
+  uint16_t *palette = nullptr;
 
   // pixel double scanline counter
   static volatile int cur_scanline = 240;
@@ -103,6 +108,12 @@ namespace st7789 {
     while(!(pio->fdebug & stall_mask));
   }
 
+  // palette lookup
+  static inline void convert_paletted(const uint8_t *in, uint16_t *out, int count) {
+    for(int i = 0; i < count; i++)
+      *out++ = palette[*in++];
+  }
+
   // used for pixel doubling
   static void __isr double_dma_irq_handler() {
     if(dma_channel_get_irq0_status(dma_channel)) {
@@ -116,6 +127,78 @@ namespace st7789 {
       dma_channel_set_trans_count(dma_channel, count, false);
       dma_channel_set_read_addr(dma_channel, upd_frame_buffer + (cur_scanline - 1) * (win_w / 2), true);
     }
+  }
+
+  static void __isr double_palette_dma_irq_handler() {
+    if(dma_channel_get_irq0_status(dma_channel)) {
+      dma_channel_acknowledge_irq0(dma_channel);
+
+      if(cur_scanline > win_h / 2)
+        return;
+
+      // num pixels
+      auto count = cur_scanline == (win_h + 1) / 2 ? win_w / 2 : win_w;
+
+      // start from buffer 0 (to repeat first line)
+      int palette_buf_idx = cur_scanline & 1;
+
+      dma_channel_set_trans_count(dma_channel, count / 2, false);
+      dma_channel_set_read_addr(dma_channel, palette_tmp_buf + (win_w / 2) * (palette_buf_idx ^ 1), true);
+
+      // prepare next lines
+      if(++cur_scanline > win_h / 2)
+        return;
+
+      auto in = (uint8_t *)upd_frame_buffer + (cur_scanline - 1) * (win_w / 2);
+      auto out = (uint16_t *)palette_tmp_buf + palette_buf_idx * win_w;
+      convert_paletted(in, out, cur_scanline == (win_h + 1) / 2 ? win_w / 2 : win_w);
+    }
+  }
+
+  static void __isr palette_dma_irq_handler() {
+    if(dma_channel_get_irq0_status(dma_channel)) {
+      dma_channel_acknowledge_irq0(dma_channel);
+
+      if(cur_scanline >= win_h)
+        return;
+
+      // start from buffer 1
+      int palette_buf_idx = cur_scanline & 1;
+
+      dma_channel_set_trans_count(dma_channel, win_w, false);
+      dma_channel_set_read_addr(dma_channel, palette_tmp_buf + (win_w / 2) * palette_buf_idx, true);
+
+      // prepare next line
+      if(++cur_scanline >= win_h)
+        return;
+
+      auto in = (uint8_t *)upd_frame_buffer + (cur_scanline) * win_w;
+      auto out = (uint16_t *)palette_tmp_buf + (palette_buf_idx ^ 1) * win_w;
+      convert_paletted(in, out, win_w);
+    }
+  }
+
+  static irq_handler_t cur_irq_handler = nullptr;
+
+  // set DMA irq handler for pixel doubling/palette lookup
+  static void update_irq_handler() {
+    irq_handler_t new_handler;
+
+    if(paletted)
+      new_handler = pixel_double ? double_palette_dma_irq_handler : palette_dma_irq_handler;
+    else
+      new_handler = double_dma_irq_handler;
+
+    if(cur_irq_handler == new_handler)
+      return;
+
+    if(cur_irq_handler)
+      irq_remove_handler(DMA_IRQ_0, cur_irq_handler);
+
+    irq_add_shared_handler(DMA_IRQ_0, new_handler, PICO_SHARED_IRQ_HANDLER_DEFAULT_ORDER_PRIORITY);
+    cur_irq_handler = new_handler;
+
+    cur_scanline = win_h; // probably switching mode, set to max so that dma_is_busy thinks we're finished
   }
 
   void init(bool auto_init_sequence) {
@@ -297,7 +380,7 @@ namespace st7789 {
     dma_channel_configure(
       dma_channel, &config, &pio->txf[pio_sm], frame_buffer, width * height, false);
 
-    irq_add_shared_handler(DMA_IRQ_0, double_dma_irq_handler, PICO_SHARED_IRQ_HANDLER_DEFAULT_ORDER_PRIORITY);
+    update_irq_handler();
     irq_set_enabled(DMA_IRQ_0, true);
   }
 
@@ -346,9 +429,22 @@ namespace st7789 {
     if(!write_mode)
       prepare_write();
 
+    upd_frame_buffer = frame_buffer;
+
+    // paletted needs conversion
+    if(paletted) {
+      // first two lines
+      convert_paletted((uint8_t *)frame_buffer, (uint16_t *)palette_tmp_buf, pixel_double ? win_w : win_w * 2);
+      cur_scanline = 1;
+
+      int count = pixel_double ? win_w / 4 : win_w;
+      dma_channel_set_trans_count(dma_channel, count, false);
+      dma_channel_set_read_addr(dma_channel, palette_tmp_buf, true);
+      return;
+    }
+
     if(pixel_double) {
       cur_scanline = 0;
-      upd_frame_buffer = frame_buffer;
       dma_channel_set_trans_count(dma_channel, win_w / 4, false);
     } else
       dma_channel_set_trans_count(dma_channel, win_w * win_h, false);
@@ -393,11 +489,33 @@ namespace st7789 {
     if(write_mode)
       command(0);
 
-    if(pixel_double) {
+    dma_channel_set_irq0_enabled(dma_channel, false);
+    update_irq_handler();
+
+    if(pixel_double || paletted) {
       dma_channel_acknowledge_irq0(dma_channel);
       dma_channel_set_irq0_enabled(dma_channel, true);
-    } else
-      dma_channel_set_irq0_enabled(dma_channel, false);
+    }
+  }
+
+  void set_palette_mode(bool pal) {
+    if(paletted == pal)
+      return;
+
+    paletted = pal;
+
+    // allocate tmp buffer if needed
+    // TODO: free this if switching back to non-paletted?
+    if(paletted && !palette_tmp_buf)
+      palette_tmp_buf = new uint32_t[DISPLAY_WIDTH];
+
+    dma_channel_set_irq0_enabled(dma_channel, false);
+    update_irq_handler();
+
+    if(pixel_double || paletted) {
+      dma_channel_acknowledge_irq0(dma_channel);
+      dma_channel_set_irq0_enabled(dma_channel, true);
+    }
   }
 
   void clear() {
@@ -410,6 +528,8 @@ namespace st7789 {
 
   bool dma_is_busy() {
     if(pixel_double && cur_scanline <= win_h / 2)
+      return true;
+    else if(!pixel_double && paletted && cur_scanline < win_h)
       return true;
 
     return dma_channel_is_busy(dma_channel);

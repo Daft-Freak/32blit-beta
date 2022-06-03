@@ -68,7 +68,7 @@ bool display_render_needed() {
 }
 
 bool display_mode_supported(blit::ScreenMode new_mode, const blit::SurfaceTemplate &new_surf_template) {
-  if(new_surf_template.format != blit::PixelFormat::RGB565)
+  if(new_surf_template.format != blit::PixelFormat::RGB565 && new_surf_template.format != blit::PixelFormat::P)
     return false;
 
   // TODO: could allow smaller sizes with window
@@ -85,6 +85,10 @@ void display_mode_changed(blit::ScreenMode new_mode, blit::SurfaceTemplate &new_
     do_render = true; // prevent starting an update during switch
 
   st7789::set_pixel_double(new_mode == ScreenMode::lores);
+  st7789::set_palette_mode(new_surf_template.format == PixelFormat::P);
+
+  if(new_surf_template.format == PixelFormat::P)
+    st7789::palette = screen_palette565;
 
   if(new_mode == ScreenMode::hires)
     st7789::frame_buffer = screen_fb;

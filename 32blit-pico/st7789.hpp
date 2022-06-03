@@ -5,7 +5,7 @@
 
 namespace st7789 {
 
-  extern uint16_t *frame_buffer;
+  extern uint16_t *frame_buffer, *palette;
 
   void init(bool auto_init_sequence = true);
 
@@ -16,6 +16,7 @@ namespace st7789 {
 
   void set_window(uint16_t x, uint16_t y, uint16_t w, uint16_t h);
   void set_pixel_double(bool pd);
+  void set_palette_mode(bool pal);
 
   void clear();
 
