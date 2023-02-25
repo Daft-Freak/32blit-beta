@@ -106,7 +106,7 @@
 // Size of buffer to hold descriptors and other data used for enumeration
 #define CFG_TUH_ENUMERATION_BUFSIZE 256
 
-#define CFG_TUH_HUB                 0
+#define CFG_TUH_HUB                 1
 #define CFG_TUH_CDC                 1
 #ifdef INPUT_USB_HID
 #define CFG_TUH_HID                 4 // typical keyboard + mouse device can have 3-4 HID interfaces
