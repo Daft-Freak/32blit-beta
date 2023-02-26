@@ -4,6 +4,7 @@
 #include "hardware/dma.h"
 #include "hardware/pio.h"
 #include "pico/binary_info.h"
+#include "pico/time.h"
 
 #include "storage.hpp"
 
@@ -14,7 +15,7 @@
 #define SD_CMD  18
 #define SD_DAT0 19
 
-#define SD_TIMEOUT 10
+#define SD_TIMEOUT 100
 
 #define SD_MAX_READ_BLOCKS 32
 
@@ -101,7 +102,7 @@ static bool check_res_status(uint8_t *res_data) {
 }
 
 // res_data should be padded to word size
-static void sd_command(uint8_t cmd, uint32_t param, int res_size = 0, uint8_t *res_data = nullptr) {
+static bool sd_command(uint8_t cmd, uint32_t param, int res_size = 0, uint8_t *res_data = nullptr) {
   uint8_t buf[]{
     uint8_t(0x40 | cmd),
     uint8_t(param >> 24),
@@ -149,7 +150,17 @@ static void sd_command(uint8_t cmd, uint32_t param, int res_size = 0, uint8_t *r
     // double jump to wait state
     pio_sm_put_blocking(sd_pio, sd_cmd_sm, jmp_cmd_dat(state_inline_instruction) << 16 | jmp_cmd_dat(no_arg_state_wait_high));
 
-    while(dma_channel_is_busy(dma_channel));
+    absolute_time_t timeout_time = make_timeout_time_ms(SD_TIMEOUT);
+
+    while(dma_channel_is_busy(dma_channel)) {
+        // timeout
+        if(absolute_time_diff_us(get_absolute_time(), timeout_time) <= 0) {
+          dma_channel_abort(dma_channel);
+          pio_sm_clear_fifos(sd_pio, sd_cmd_sm);
+          pio_sm_exec(sd_pio, sd_cmd_sm, jmp_cmd_dat(no_arg_state_wait_high));
+          return false;
+        }
+    }
 
     // swap and shift for missing msb (it's 0)
     int num_words = (res_size + 31) / 32;
@@ -161,6 +172,8 @@ static void sd_command(uint8_t cmd, uint32_t param, int res_size = 0, uint8_t *r
   }
 
   wait_done(sd_cmd_sm);
+
+  return true;
 }
 
 static bool sd_command_read_block(uint8_t cmd, uint32_t addr, uint8_t *buffer, int count = 1, uint16_t *crc = nullptr) {
@@ -223,9 +236,8 @@ static bool sd_command_read_block(uint8_t cmd, uint32_t addr, uint8_t *buffer, i
   dma_ctrl |= dma_ctrl_channel << DMA_CH0_CTRL_TRIG_CHAIN_TO_LSB;
 
   uint8_t res_data[8];
-  sd_command(cmd, addr, 48, res_data);
 
-  if(!check_res_status(res_data))
+  if(!sd_command(cmd, addr, 48, res_data) || !check_res_status(res_data))
     return false;
 
   // get data
@@ -278,9 +290,8 @@ static bool sd_command_write_block(uint8_t cmd, uint32_t addr, uint8_t *buffer) 
   pio_sm_put(sd_pio, sd_data_sm, jmp_cmd_dat(state_send_bits) << 16 | (block_len * 8 + 32 + 16 /*crc*/ + 16 /*padding*/ - 1));
 
   uint8_t res_data[8];
-  sd_command(cmd, addr, 48, res_data);
 
-  if(!check_res_status(res_data))
+  if(!sd_command(cmd, addr, 48, res_data) || !check_res_status(res_data))
     return false;
 
   pio_sm_set_enabled(sd_pio, sd_data_sm, true);
@@ -317,13 +328,13 @@ static void sd_set_width(uint8_t width) {
 
   // ACMD6
   uint8_t res_data[8];
-  sd_command(55, card_rca << 16, 48, res_data); // APP_CMD
-  if(!check_res_status(res_data))
+  bool cmd_res = sd_command(55, card_rca << 16, 48, res_data); // APP_CMD
+  if(!cmd_res || !check_res_status(res_data))
       return;
 
-  sd_command(6, width == 4 ? 2 : 0, 48, res_data); // SET_BUS_WIDTH
+  cmd_res = sd_command(6, width == 4 ? 2 : 0, 48, res_data); // SET_BUS_WIDTH
 
-  if(!check_res_status(res_data))
+  if(!cmd_res ||!check_res_status(res_data))
       return;
 
   data_width = width;
@@ -431,7 +442,8 @@ bool storage_init() {
   bool is_v2 = true;
 
   uint8_t data[8];
-  sd_command(8, 0x1AA, 48, data); // SEND_IF_COND
+  if(!sd_command(8, 0x1AA, 48, data)) // SEND_IF_COND
+    return false;
 
   uint32_t data_arg = data[1] << 24 | data[2] << 16 | data[3] << 8 | data[4];
 
@@ -446,12 +458,13 @@ bool storage_init() {
 
   // init
   while(true) {
-    sd_command(55, 0, 48, data); // APP_CMD
+    bool cmd_res = sd_command(55, 0, 48, data); // APP_CMD
 
-    if(!check_res_status(data))
-      return false;
+    if(!cmd_res || !check_res_status(data))
+      continue;
 
-    sd_command(41, 1 << 20 /*3.2-3.3v*/ | (is_v2 ? 0x40000000 : 0), 48, data); // APP_SEND_OP_COND
+    if(!sd_command(41, 1 << 20 /*3.2-3.3v*/ | (is_v2 ? 0x40000000 : 0), 48, data)) // APP_SEND_OP_COND
+      continue;
 
     ocr = data[1] << 24 | data[2] << 16 | data[3] << 8 | data[4];
 
@@ -465,16 +478,19 @@ bool storage_init() {
 
   // address setup
   uint8_t cid_res[20];
-  sd_command(2, 0, 136, cid_res); // ALL_SEND_CID
+  if(!sd_command(2, 0, 136, cid_res)) // ALL_SEND_CID
+    return false;
 
-  sd_command(3, 0, 48, data); // SEND_RELATIVE_ADDR
+  if(!sd_command(3, 0, 48, data)) // SEND_RELATIVE_ADDR
+    return false;
 
   card_rca = data[1] << 8 | data[2];
 
   // csd r2
   // read CSD
   uint8_t csd_res[20];
-  sd_command(9, card_rca << 16, 136, csd_res); // SEND_CSD
+  if(!sd_command(9, card_rca << 16, 136, csd_res)) // SEND_CSD
+    return false;
 
   auto csd = csd_res + 1;
 
@@ -495,7 +511,9 @@ bool storage_init() {
   printf("Detected %s card, size %lu blocks\n", is_v2 ? (is_hcs ? "SDHC" : "SDv2") : "SDv1", card_size_blocks);
 
   // select the card
-  sd_command(7, card_rca << 16, 48, data); // SELECT_CARD
+  if(!sd_command(7, card_rca << 16, 48, data)) // SELECT_CARD
+    return false;
+
   wait_not_busy(sd_cmd_sm);
 
   // attempt high speed
