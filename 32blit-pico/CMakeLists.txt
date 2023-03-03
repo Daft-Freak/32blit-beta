@@ -43,7 +43,13 @@ target_sources(BlitHalPico INTERFACE
     ${CMAKE_CURRENT_LIST_DIR}/usb_descriptors.c
 )
 
-target_link_libraries(BlitHalPico INTERFACE hardware_dma hardware_pio hardware_pwm hardware_spi pico_multicore pico_stdlib pico_unique_id pico_rand tinyusb_device)
+target_link_libraries(BlitHalPico INTERFACE
+    hardware_dma hardware_pio hardware_pwm hardware_spi
+    pico_multicore pico_stdlib pico_unique_id pico_rand
+    tinyusb_device
+    LauncherShared
+)
+
 target_include_directories(BlitHalPico INTERFACE
     ${CMAKE_CURRENT_LIST_DIR} # for tusb_config
     ${CMAKE_CURRENT_LIST_DIR}/../3rd-party/fatfs
@@ -177,6 +183,7 @@ set(BLIT_BOARD_DEFINITIONS ${BLIT_BOARD_DEFINITIONS} PARENT_SCOPE)
 # some file paths we need later
 set(LINKER_SCRIPT ${CMAKE_CURRENT_LIST_DIR}/memmap_blit.ld PARENT_SCOPE)
 set(STARTUP_SRC ${CMAKE_CURRENT_LIST_DIR}/startup.S PARENT_SCOPE)
+set(LAUNCHERSHARED_DIR ${CMAKE_CURRENT_LIST_DIR}/../launcher-shared PARENT_SCOPE)
 
 # functions
 function(blit_executable NAME)
@@ -188,6 +195,11 @@ function(blit_executable NAME)
     target_link_options(${NAME} PUBLIC -specs=nano.specs -u _printf_float)
 
     # standalone .uf2
+    # TODO: import pico hal if standalone build
+	if(NOT TARGET LauncherShared)
+        add_subdirectory(${LAUNCHERSHARED_DIR} launcher-shared)
+    endif()
+
     add_executable(${NAME}-standalone)
     target_link_libraries(${NAME}-standalone ${NAME})
     pico_enable_stdio_uart(${NAME}-standalone 1)
