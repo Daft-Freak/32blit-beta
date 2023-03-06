@@ -290,3 +290,5 @@ function(blit_metadata TARGET FILE)
     target_compile_definitions(${TARGET} PRIVATE PICO_NO_BI_PROGRAM_NAME=1)
 
 endfunction()
+
+add_subdirectory(loader)
