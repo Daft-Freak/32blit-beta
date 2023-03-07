@@ -22,10 +22,12 @@ SurfaceInfo cur_surf_info;
 
 bool fb_double_buffer = true;
 
-#if defined(BLIT_BOARD_PIMORONI_PICOVISION)
-static const uint16_t *screen_fb = nullptr;
+#if defined(BUILD_LOADER) || defined(BLIT_BOARD_PIMORONI_PICOVISION)
+uint16_t *screen_fb = nullptr;
+static uint32_t max_fb_size = 0;
 #else
 uint16_t screen_fb[fb_size];
+static const uint32_t max_fb_size = fb_size;
 #endif
 
 static Pen *screen_palette = nullptr;
@@ -80,17 +82,16 @@ bool set_screen_mode_format(ScreenMode new_mode, SurfaceTemplate &new_surf_templ
     case ScreenMode::hires_palette:
       if(new_surf_template.bounds.empty())
         new_surf_template.bounds = hires_screen_size;
-#if ALLOW_HIRES
       break;
-#else
-      // can squeeze single-buffered hires paletted into the double-buffered lores fb
-      if(new_surf_template.format != PixelFormat::P)
-        return false;
-#endif
   }
 
   // check the framebuffer is large enough for mode
   auto fb_size = uint32_t(new_surf_template.bounds.area()) * pixel_format_stride[int(new_surf_template.format)];
+// TODO: more generic "doesn't have a framebuffer"?
+#ifndef BLIT_BOARD_PIMORONI_PICOVISION
+  if(max_fb_size < fb_size)
+    return false;
+#endif
 
   if(!display_mode_supported(new_mode, new_surf_template))
     return false;
@@ -100,7 +101,7 @@ bool set_screen_mode_format(ScreenMode new_mode, SurfaceTemplate &new_surf_templ
     new_surf_template.palette = screen_palette;
   }
 
-  fb_double_buffer = fb_size * 2 <= sizeof(screen_fb);
+  fb_double_buffer = fb_size * 2 <= max_fb_size;
   if(!fb_double_buffer)
     screen.data = new_surf_template.data;
 
@@ -120,4 +121,12 @@ void set_screen_palette(const Pen *colours, int num_cols) {
 
   for(int i = 0; i < num_cols; i++)
     screen_palette565[i] = (colours[i].r >> 3) | ((colours[i].g >> 2) << 5) | ((colours[i].b >> 3) << 11);
+}
+
+void set_framebuffer(uint8_t *data, uint32_t max_size) {
+#if defined(BUILD_LOADER) && !defined(BLIT_BOARD_PIMORONI_PICOVISION)
+  screen_fb = (uint16_t *)data;
+  screen.data = data;
+  max_fb_size = max_size;
+#endif
 }
