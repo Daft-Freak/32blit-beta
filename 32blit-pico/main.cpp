@@ -30,6 +30,8 @@ const unsigned int game_block_size = 64 * 1024; // this is the 32blit's flash er
 
 static blit::AudioChannel channels[CHANNEL_COUNT];
 
+static int (*do_tick)(uint32_t time) = blit::tick;
+
 static uint32_t now() {
   return to_ms_since_boot(get_absolute_time());
 }
@@ -118,7 +120,7 @@ static bool launch(const char *path) {
         return false;
 
       blit::render = header->render;
-      // FIXME: tick
+      do_tick = header->tick;
 
       return true;
     }
@@ -338,7 +340,7 @@ int main() {
     auto now = ::now();
     update_display(now);
     update_input();
-    int ms_to_next_update = tick(::now());
+    int ms_to_next_update = do_tick(::now());
     update_led();
     update_usb();
     update_multiplayer();
