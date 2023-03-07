@@ -1,6 +1,7 @@
 add_executable(blit-loader loader.cpp)
 target_link_libraries(blit-loader BlitHalPico BlitEngine)
 target_link_options(blit-loader PUBLIC -specs=nano.specs -u _printf_float)
+target_compile_definitions(blit-loader PRIVATE BUILD_LOADER)
 
 pico_set_linker_script(blit-loader ${CMAKE_CURRENT_LIST_DIR}/../memmap_blit_loader.ld)
 
