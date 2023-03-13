@@ -17,6 +17,7 @@ bool fb_double_buffer = true;
 #if defined(BUILD_LOADER) || defined(BLIT_BOARD_PIMORONI_PICOVISION)
 uint16_t *screen_fb = nullptr;
 static uint32_t max_fb_size = 0;
+static Size max_fb_bounds(DISPLAY_WIDTH, DISPLAY_HEIGHT);
 #elif ALLOW_HIRES
 uint16_t screen_fb[DISPLAY_WIDTH * DISPLAY_HEIGHT];
 static const uint32_t max_fb_size = sizeof(screen_fb);
@@ -118,10 +119,11 @@ void set_screen_palette(const Pen *colours, int num_cols) {
     screen_palette565[i] = (colours[i].r >> 3) | ((colours[i].g >> 2) << 5) | ((colours[i].b >> 3) << 11);
 }
 
-void set_framebuffer(uint8_t *data, uint32_t max_size) {
+void set_framebuffer(uint8_t *data, uint32_t max_size, Size max_bounds) {
 #if defined(BUILD_LOADER) && !defined(BLIT_BOARD_PIMORONI_PICOVISION)
   screen_fb = (uint16_t *)data;
   screen.data = data;
   max_fb_size = max_size;
+  max_fb_bounds = max_bounds;
 #endif
 }
