@@ -6,6 +6,11 @@
 
 #define AUDIO_MAX_SAMPLE_UPDATE 64
 
+// native
+#define SD_CLK   5
+#define SD_CMD  18
+#define SD_DAT0 19
+
 // spi
 #define SD_SCK   5
 #define SD_MOSI 18
