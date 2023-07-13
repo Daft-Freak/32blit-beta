@@ -143,7 +143,7 @@ void render(uint32_t time) {
         (float)((sinf(blit::now() / 100.0f) + 1) / 2.0f)
     );
 
-#ifdef INPUT_USB_HID
+#if defined(INPUT_USB_HID) && BLIT_PICO_STANDALONE
     extern uint32_t hid_buttons;
     int x = COL2;
 
@@ -178,7 +178,7 @@ void update(uint32_t time) {
         blit::debugf("\n");
     }
 
-#ifdef INPUT_USB_HID
+#if defined(INPUT_USB_HID) && BLIT_PICO_STANDALONE
     static uint32_t last_hid = 0;
 
     extern uint32_t hid_buttons;
