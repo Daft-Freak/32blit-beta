@@ -8,12 +8,9 @@
 
 #include "storage.hpp"
 
-#include "sd_card.pio.h"
+#include "config.h"
 
-// vga board pins
-#define SD_CLK   5
-#define SD_CMD  18
-#define SD_DAT0 19
+#include "sd_card.pio.h"
 
 #define SD_TIMEOUT 100
 
