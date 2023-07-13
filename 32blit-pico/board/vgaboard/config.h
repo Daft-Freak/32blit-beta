@@ -4,6 +4,11 @@
 #define AUDIO_I2S_CLOCK_PIN_BASE 27
 #define AUDIO_I2S_DATA_PIN 26
 
+// native
+#define SD_CLK   5
+#define SD_CMD  18
+#define SD_DAT0 19
+
 // spi
 #define SD_SCK   5
 #define SD_MOSI 18
