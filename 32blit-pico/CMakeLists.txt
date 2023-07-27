@@ -34,6 +34,7 @@ target_sources(BlitHalPico INTERFACE
     ${CMAKE_CURRENT_LIST_DIR}/../3rd-party/fatfs/ff.c
     ${CMAKE_CURRENT_LIST_DIR}/../3rd-party/fatfs/ffunicode.c
 
+    ${CMAKE_CURRENT_LIST_DIR}/blit-launch.cpp
     ${CMAKE_CURRENT_LIST_DIR}/display.cpp
     ${CMAKE_CURRENT_LIST_DIR}/file.cpp
     ${CMAKE_CURRENT_LIST_DIR}/led.cpp
