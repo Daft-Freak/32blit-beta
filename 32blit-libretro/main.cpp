@@ -50,7 +50,7 @@ void retro_set_environment(retro_environment_t cb) {
 
   // get perf interface
   if(!cb(RETRO_ENVIRONMENT_GET_PERF_INTERFACE, &perf_interface))
-    log_printf_cb(RETRO_LOG_DEBUG, "No perf interface");
+    log_printf_cb(RETRO_LOG_DEBUG, "No perf interface\n");
 
   // setup controller
   static const struct retro_controller_description controllers[] = {
