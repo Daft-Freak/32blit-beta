@@ -1,3 +1,5 @@
+#include <random>
+
 #include "api.hpp"
 #include "consts.hpp"
 
@@ -38,6 +40,21 @@ void set_screen_palette(const Pen *colours, int num_cols) {
 
 }
 
+// blit random callback
+#ifdef __MINGW32__
+// Windows/MinGW doesn't support a non-deterministic source of randomness, so we fall back upon the age-old time seed once more
+// Without this, random_device() will always return the same number and thus our mersenne twister will always produce the same sequence.
+static std::mt19937 random_generator(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count());
+#else
+static std::random_device random_device;
+static std::mt19937 random_generator(random_device());
+#endif
+static std::uniform_int_distribution<uint32_t> random_distribution;
+static uint32_t blit_random() {
+  return random_distribution(random_generator);
+}
+
+
 void blit_api_init() {
   api.channels = ::channels;
 
@@ -45,7 +62,7 @@ void blit_api_init() {
   api.set_screen_palette = ::set_screen_palette;
   api.set_screen_mode_format = ::set_screen_mode_format;
   api.now = ::get_current_time;
-  // api.random = ::random;
+  api.random = ::blit_random;
   // api.exit = ::exit;
 
   // serial debug
