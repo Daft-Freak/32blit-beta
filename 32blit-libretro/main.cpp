@@ -23,12 +23,30 @@ static retro_video_refresh_t video_cb;
 static retro_audio_sample_t audio_sample_cb;
 static retro_input_poll_t input_poll_cb;
 static retro_input_state_t input_state_cb;
+static retro_log_printf_t log_printf_cb;
+
+static void fallback_log(enum retro_log_level level, const char *fmt, ...) {
+  static const char *levels[]{"debug", "info", "warn", "error"};
+  fprintf(stderr, "%s: ", levels[level]);
+
+  va_list va;
+  va_start(va, fmt);
+  vfprintf(stderr, fmt, va);
+  va_end(va);
+}
 
 void retro_set_environment(retro_environment_t cb) {
   environment_cb = cb;
 
-  // TODO: get logging callback
+  // get logging callback
+  struct retro_log_callback logging;
 
+  if(cb(RETRO_ENVIRONMENT_GET_LOG_INTERFACE, &logging))
+    log_printf_cb = logging.log;
+  else
+    log_printf_cb = fallback_log;
+
+  // setup controller
   static const struct retro_controller_description controllers[] = {
     {"32blit", RETRO_DEVICE_SUBCLASS(RETRO_DEVICE_JOYPAD, 0)},
   };
@@ -286,4 +304,8 @@ bool screen_mode_changed(blit::SurfaceTemplate &info) {
 
 uint32_t get_current_time() {
   return current_time;
+}
+
+void debug_message(const char *message) {
+  log_printf_cb(RETRO_LOG_DEBUG, "%s", message);
 }

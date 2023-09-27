@@ -66,7 +66,7 @@ void blit_api_init() {
   // api.exit = ::exit;
 
   // serial debug
-  // api.debug = ::debug;
+  api.debug = ::debug_message;
 
   // files
   // api.open_file = ::open_file;

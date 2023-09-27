@@ -8,6 +8,7 @@ void blit_api_init();
 // handlers in main
 bool screen_mode_changed(blit::SurfaceTemplate &info);
 uint32_t get_current_time();
+void debug_message(const char *message);
 
 // user code
 void init();
