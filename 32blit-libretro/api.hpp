@@ -9,6 +9,7 @@ void blit_api_init(const char *file_base_dir, const char *save_dir);
 bool screen_mode_changed(blit::SurfaceTemplate &info);
 uint32_t get_current_time();
 void debug_message(const char *message);
+uint32_t get_us_timer();
 
 // user code
 void init();

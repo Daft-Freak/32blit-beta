@@ -25,6 +25,8 @@ static retro_input_poll_t input_poll_cb;
 static retro_input_state_t input_state_cb;
 static retro_log_printf_t log_printf_cb;
 
+static retro_perf_callback perf_interface;
+
 static void fallback_log(enum retro_log_level level, const char *fmt, ...) {
   static const char *levels[]{"debug", "info", "warn", "error"};
   fprintf(stderr, "%s: ", levels[level]);
@@ -45,6 +47,10 @@ void retro_set_environment(retro_environment_t cb) {
     log_printf_cb = logging.log;
   else
     log_printf_cb = fallback_log;
+
+  // get perf interface
+  if(!cb(RETRO_ENVIRONMENT_GET_PERF_INTERFACE, &perf_interface))
+    log_printf_cb(RETRO_LOG_DEBUG, "No perf interface");
 
   // setup controller
   static const struct retro_controller_description controllers[] = {
@@ -315,4 +321,11 @@ uint32_t get_current_time() {
 
 void debug_message(const char *message) {
   log_printf_cb(RETRO_LOG_DEBUG, "%s", message);
+}
+
+uint32_t get_us_timer() {
+  if(perf_interface.get_time_usec)
+    return perf_interface.get_time_usec();
+
+  return 0;
 }

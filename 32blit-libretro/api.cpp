@@ -242,6 +242,11 @@ static bool is_storage_available() {
   return true;
 }
 
+// profiler
+static uint32_t get_max_us_timer() {
+  return 0xFFFFFFFF;
+}
+
 void blit_api_init(const char *file_base_dir, const char *save_dir) {
   base_path = std::string(file_base_dir) + "/";
   save_path = std::string(save_dir) + "/" + metadata_title + "/";
@@ -278,8 +283,8 @@ void blit_api_init(const char *file_base_dir, const char *save_dir) {
 
   // profiler
   // api.enable_us_timer = ::enable_us_timer;
-  // api.get_us_timer = ::get_us_timer;
-  // api.get_max_us_timer = ::get_max_us_timer;
+  api.get_us_timer = ::get_us_timer;
+  api.get_max_us_timer = ::get_max_us_timer;
 
   // jpeg
   // api.decode_jpeg_buffer = ::decode_jpeg_buffer;
