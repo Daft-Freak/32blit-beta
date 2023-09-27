@@ -247,6 +247,20 @@ static uint32_t get_max_us_timer() {
   return 0xFFFFFFFF;
 }
 
+
+static blit::GameMetadata get_metadata() {
+  blit::GameMetadata ret;
+
+  ret.title = metadata_title;
+  ret.author = metadata_author;
+  ret.description = metadata_description;
+  ret.version = metadata_version;
+  ret.url = metadata_url;
+  ret.category = metadata_category;
+
+  return ret;
+}
+
 void blit_api_init(const char *file_base_dir, const char *save_dir) {
   base_path = std::string(file_base_dir) + "/";
   save_path = std::string(save_dir) + "/" + metadata_title + "/";
@@ -305,5 +319,5 @@ void blit_api_init(const char *file_base_dir, const char *save_dir) {
   // api.flash_to_tmp = ::flash_to_tmp;
   // api.tmp_file_closed = ::tmp_file_closed;
 
-  // api.get_metadata = ::get_metadata;
+  api.get_metadata = ::get_metadata;
 }
