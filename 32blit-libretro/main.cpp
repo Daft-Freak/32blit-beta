@@ -26,6 +26,7 @@ static retro_audio_sample_t audio_sample_cb;
 static retro_input_poll_t input_poll_cb;
 static retro_input_state_t input_state_cb;
 static retro_log_printf_t log_printf_cb;
+static retro_set_rumble_state_t rumble_state_cb;
 
 static retro_perf_callback perf_interface;
 
@@ -93,12 +94,18 @@ void retro_set_input_state(retro_input_state_t cb) {
 
 // init/deint/info
 void retro_init() {
+  // get system and save dirs
   const char *sys_dir = nullptr, *save_dir = nullptr;
   if(!environment_cb(RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY, &sys_dir) || !sys_dir)
     sys_dir = "";
 
   if(!environment_cb(RETRO_ENVIRONMENT_GET_SAVE_DIRECTORY, &save_dir) || !save_dir)
     save_dir = sys_dir;
+
+  // rumble interface
+  struct retro_rumble_interface rumble;
+  if(environment_cb(RETRO_ENVIRONMENT_GET_RUMBLE_INTERFACE, &rumble))
+    rumble_state_cb = rumble.set_rumble_state;
 
 	blit::update = ::update;
 	blit::render = ::render;
@@ -167,6 +174,10 @@ void retro_run() {
   blit::render(current_time);
 
   blit::tick(current_time);
+
+  // rumble output
+  if(rumble_state_cb)
+    rumble_state_cb(0, RETRO_RUMBLE_STRONG, blit::vibration * 0xFFFF);
 
   // convert screen data
   switch(screen_format) {
