@@ -70,6 +70,12 @@ static std::string map_path(const std::string &path) {
   if(path.compare(0, save_path.length(), save_path) == 0)
     return path;
 
+  // special case for launch path
+  auto launch_path = ::get_launch_path();
+
+  if(launch_path && path == launch_path)
+    return path;
+
   // otherwise it should be under the base path
   return base_path + path;
 }
