@@ -309,7 +309,7 @@ void blit_api_init(const char *file_base_dir, const char *save_dir) {
   // api.erase_game = ::erase_game;
   // api.get_type_handler_metadata = ::get_type_handler_metadata;
 
-  // api.get_launch_path = ::get_launch_path;
+  api.get_launch_path = ::get_launch_path;
 
   // multiplayer
   // api.is_multiplayer_connected = ::is_multiplayer_connected;

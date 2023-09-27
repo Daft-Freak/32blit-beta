@@ -17,6 +17,8 @@ static uint8_t conv_fb[screen_width * screen_height * 4];
 
 static uint32_t current_time;
 
+std::string launch_path;
+
 // callbacks
 static retro_environment_t environment_cb;
 static retro_video_refresh_t video_cb;
@@ -251,6 +253,8 @@ bool retro_load_game(const struct retro_game_info *game) {
 
   // TODO: audio cb?
 
+  launch_path = game && game->path ? game->path : "";
+
   // init game
   blit::set_screen_mode(blit::ScreenMode::lores);
 
@@ -328,4 +332,11 @@ uint32_t get_us_timer() {
     return perf_interface.get_time_usec();
 
   return 0;
+}
+
+const char *get_launch_path() {
+  if(launch_path.empty())
+    return nullptr;
+
+  return launch_path.c_str();
 }
