@@ -85,10 +85,17 @@ void retro_set_input_state(retro_input_state_t cb) {
 
 // init/deint/info
 void retro_init() {
+  const char *sys_dir = nullptr, *save_dir = nullptr;
+  if(!environment_cb(RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY, &sys_dir) || !sys_dir)
+    sys_dir = "";
+
+  if(!environment_cb(RETRO_ENVIRONMENT_GET_SAVE_DIRECTORY, &save_dir) || !save_dir)
+    save_dir = sys_dir;
+
 	blit::update = ::update;
 	blit::render = ::render;
 
-  blit_api_init();
+  blit_api_init(sys_dir, save_dir);
 }
 
 void retro_deinit() {

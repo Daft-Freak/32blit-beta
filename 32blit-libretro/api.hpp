@@ -3,7 +3,7 @@
 
 #include "engine/api_private.hpp"
 
-void blit_api_init();
+void blit_api_init(const char *file_base_dir, const char *save_dir);
 
 // handlers in main
 bool screen_mode_changed(blit::SurfaceTemplate &info);
