@@ -5,9 +5,14 @@
 
 #include "aps6404.hpp"
 #include "swd_load.hpp"
-#include "pico-stick.h"
 
 #include "config.h"
+
+#ifdef PICOVISION_WIDE
+#include "pico-stick-wide.h"
+#else
+#include "pico-stick.h"
+#endif
 
 // pins
 static constexpr uint CS     = 17;
@@ -31,7 +36,18 @@ static const blit::Size resolutions[]{
   {720, 480},
   {720, 400},
   {720, 576},
+
+#ifdef PICOVISION_WIDE
+  {800, 600},
+  {800, 480},
+  {800, 450},
+  {960,  -1}, // this would be 960x540 60Hz
+  {960, 540}, // 50Hz
+  {1280, 720}, // 30Hz
+#endif
 };
+
+static const int min_wide_mode = 4;
 
 static pimoroni::APS6404 ram(CS, D0, pio1);
 static uint8_t ram_bank = 0;
@@ -404,6 +420,11 @@ void update_display(uint32_t time) {
       }
 
       uint8_t buf[2] = {I2C_REG_SET_RES, uint8_t(new_res)};
+
+      // adjust for "wide" modes
+      if(new_res >= min_wide_mode)
+        buf[1] += 0x10 - min_wide_mode;
+
       i2c_write_blocking(i2c1, I2C_ADDR, buf, 2, false);
       cur_resolution = new_res;
     }
