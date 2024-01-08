@@ -10,11 +10,6 @@
 
 void __no_inline_not_in_flash_func(core1_main)() {
     gbacart_init();
-
-    // patch framebuffer addr into "ROM" data
-    auto cart_api = gbacart_get_api();
-    cart_api->fb_addr = gbacart_to_gba_addr(screen_fb);
-
     gbacart_start(true);
 
     while(true) {
@@ -26,7 +21,7 @@ void init_display() {
   // take over core1
   multicore_launch_core1(core1_main);
 
-  // setting lores later will fail
+  // TODO: setting lores later will fail
   blit::set_screen_mode(blit::ScreenMode::hires);
 }
 
@@ -37,6 +32,7 @@ void update_display(uint32_t time) {
     blit::render(time);
 
     cart_api->vblank_flag = 0;
+    cart_api->fb_addr = gbacart_to_gba_addr(screen_fb);
   }
 }
 
