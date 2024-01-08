@@ -130,6 +130,8 @@ elseif(BLIT_DISPLAY_DRIVER STREQUAL "scanvideo")
     list(APPEND BLIT_BOARD_LIBRARIES pico_scanvideo_dpi)
 elseif(BLIT_DISPLAY_DRIVER STREQUAL "st7789")
     list(APPEND BLIT_BOARD_DEFINITIONS DISPLAY_ST7789) # config defaults use this, also some games are using it for picosystem detection
+elseif(BLIT_DISPLAY_DRIVER STREQUAL "gbacart")
+    list(APPEND BLIT_BOARD_LIBRARIES gbacart)
 endif()
 
 if(BLIT_INPUT_DRIVER STREQUAL "usb_hid")
@@ -162,6 +164,9 @@ pico_generate_pio_header(BlitHalPico ${CMAKE_CURRENT_LIST_DIR}/sd_card.pio)
 # include picovision drivers
 if(BLIT_DISPLAY_DRIVER STREQUAL "picovision")
     include(picovision_import.cmake)
+elseif(BLIT_DISPLAY_DRIVER STREQUAL "gbacart")
+    # TODO: push code, use FetchContent
+    add_subdirectory(gbacart/lib)
 endif()
 
 # driver sources
