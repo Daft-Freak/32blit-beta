@@ -53,6 +53,9 @@ pico_generate_pio_header(BlitHalPico ${CMAKE_CURRENT_LIST_DIR}/sd_card.pio)
 # include picovision drivers
 if(BLIT_DISPLAY_DRIVER STREQUAL "picovision")
     include(picovision_import.cmake)
+elseif(BLIT_DISPLAY_DRIVER STREQUAL "gbacart")
+    # TODO: push code, use FetchContent
+    add_subdirectory(gbacart/lib)
 endif()
 
 # driver sources

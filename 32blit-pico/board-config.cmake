@@ -68,6 +68,8 @@ elseif(BLIT_DISPLAY_DRIVER STREQUAL "scanvideo")
     set(BLIT_REQUIRE_PICO_EXTRAS TRUE)
     set(BLIT_ENABLE_CORE1 TRUE)
     list(APPEND BLIT_BOARD_LIBRARIES pico_scanvideo_dpi)
+elseif(BLIT_DISPLAY_DRIVER STREQUAL "gbacart")
+    list(APPEND BLIT_BOARD_LIBRARIES gbacart)
 endif()
 
 if("usb_hid" IN_LIST BLIT_INPUT_DRIVER)
