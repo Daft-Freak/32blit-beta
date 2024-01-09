@@ -169,6 +169,10 @@ static blit::Pen get_pen_rgb555(const blit::Surface *surf, uint32_t offset) {
 
 void __no_inline_not_in_flash_func(core1_main)() {
     gbacart_init();
+
+    auto cart_api = gbacart_get_api();
+    cart_api->buttons = ~0;
+
     gbacart_start(true);
 
     while(true) {
