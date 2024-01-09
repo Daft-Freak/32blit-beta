@@ -107,6 +107,34 @@ inline uint8_t blend(uint8_t s, uint8_t d, uint8_t a) {
 static void pen_rgba_rgb555(const blit::Pen* pen, const blit::Surface* dest, uint32_t off, uint32_t c) {
   if(!pen->a) return;
 
+  // stride adjustment
+  uint32_t dest_w = dest->bounds.w;
+
+  if(dest_w != DISPLAY_WIDTH) {
+    auto x = off % dest_w;
+    auto y = off / dest_w;
+
+    if(c + x > dest_w) {
+      // split into lines
+      auto step = dest->bounds.w - x;
+      pen_rgba_rgb555(pen, dest, off, step);
+
+      c -= step;
+      off += step;
+
+      while(c) {
+        step = std::min(c, dest_w);
+        pen_rgba_rgb555(pen, dest, off, step);
+
+        c -= step;
+        off += step;
+      }
+      return;
+    }
+
+    off = y * DISPLAY_WIDTH + x;
+  }
+
   uint8_t* d = dest->data + (off * 2);
   uint8_t* m = dest->mask ? dest->mask->data + off : nullptr;
 
@@ -132,6 +160,36 @@ static void pen_rgba_rgb555(const blit::Pen* pen, const blit::Surface* dest, uin
 }
 
 static void blit_rgba_rgb555(const blit::Surface* src, uint32_t soff, const blit::Surface* dest, uint32_t doff, uint32_t cnt, int32_t src_step) {
+  // stride adjustment
+  uint32_t dest_w = dest->bounds.w;
+
+  if(dest_w != DISPLAY_WIDTH) {
+    auto x = doff % dest_w;
+    auto y = doff / dest_w;
+
+    if(cnt + x > dest_w) {
+      // split into lines
+      auto step = dest->bounds.w - x;
+      blit_rgba_rgb555(src, soff, dest, doff, step, src_step);
+
+      cnt -= step;
+      doff += step;
+      soff += step * src_step;
+
+      while(cnt) {
+        step = std::min(cnt, dest_w);
+        blit_rgba_rgb555(src, soff, dest, doff, step, src_step);
+
+        cnt -= step;
+        doff += step;
+        soff += step * src_step;
+      }
+      return;
+    }
+
+    doff = y * DISPLAY_WIDTH + x;
+  }
+
   uint8_t* s = src->palette ? src->data + soff : src->data + (soff * src->pixel_stride);
   uint8_t* d = dest->data + (doff * 2);
   uint8_t* m = dest->mask ? dest->mask->data + doff : nullptr;
@@ -159,6 +217,16 @@ static void blit_rgba_rgb555(const blit::Surface* src, uint32_t soff, const blit
 }
 
 static blit::Pen get_pen_rgb555(const blit::Surface *surf, uint32_t offset) {
+  // stride adjustment
+  uint32_t surf_w = surf->bounds.w;
+
+  if(surf_w != DISPLAY_WIDTH) {
+    auto x = offset % surf_w;
+    auto y = offset / surf_w;
+
+    offset = y * DISPLAY_WIDTH + x;
+  }
+
   auto ptr = surf->data + offset * 2;
 
   auto rgb555 = *(uint16_t *)ptr;
