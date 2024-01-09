@@ -104,7 +104,7 @@ inline uint8_t blend(uint8_t s, uint8_t d, uint8_t a) {
     *d16 = s16;
 }
 
-static void RGBA_RGB555(const blit::Pen* pen, const blit::Surface* dest, uint32_t off, uint32_t c) {
+static void pen_rgba_rgb555(const blit::Pen* pen, const blit::Surface* dest, uint32_t off, uint32_t c) {
   if(!pen->a) return;
 
   uint8_t* d = dest->data + (off * 2);
@@ -131,7 +131,7 @@ static void RGBA_RGB555(const blit::Pen* pen, const blit::Surface* dest, uint32_
   }
 }
 
-static void RGBA_RGB555(const blit::Surface* src, uint32_t soff, const blit::Surface* dest, uint32_t doff, uint32_t cnt, int32_t src_step) {
+static void blit_rgba_rgb555(const blit::Surface* src, uint32_t soff, const blit::Surface* dest, uint32_t doff, uint32_t cnt, int32_t src_step) {
   uint8_t* s = src->palette ? src->data + soff : src->data + (soff * src->pixel_stride);
   uint8_t* d = dest->data + (doff * 2);
   uint8_t* m = dest->mask ? dest->mask->data + doff : nullptr;
@@ -224,7 +224,7 @@ bool display_mode_supported(blit::ScreenMode new_mode, const blit::SurfaceTempla
 }
 
 void display_mode_changed(blit::ScreenMode new_mode, blit::SurfaceTemplate &new_surf_template) {
-  new_surf_template.pen_blend = RGBA_RGB555;
-  new_surf_template.blit_blend = RGBA_RGB555;
+  new_surf_template.pen_blend = pen_rgba_rgb555;
+  new_surf_template.blit_blend = blit_rgba_rgb555;
   new_surf_template.pen_get = get_pen_rgb555;
 }
