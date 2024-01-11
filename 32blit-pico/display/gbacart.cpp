@@ -282,10 +282,9 @@ bool display_mode_supported(blit::ScreenMode new_mode, const blit::SurfaceTempla
   if(new_surf_template.format != blit::PixelFormat::RGB565)
     return false;
 
-  // TODO: can scale
   blit::Size expected_bounds(DISPLAY_WIDTH, DISPLAY_HEIGHT);
 
-  if(new_surf_template.bounds == expected_bounds)
+  if(new_surf_template.bounds == expected_bounds || new_surf_template.bounds == expected_bounds / 2)
     return true;
 
   return false;
@@ -295,4 +294,10 @@ void display_mode_changed(blit::ScreenMode new_mode, blit::SurfaceTemplate &new_
   new_surf_template.pen_blend = pen_rgba_rgb555;
   new_surf_template.blit_blend = blit_rgba_rgb555;
   new_surf_template.pen_get = get_pen_rgb555;
+
+  // setup scaling
+  auto cart_api = gbacart_get_api();
+  cart_api->fb_pa = (new_surf_template.bounds.w << 8) / DISPLAY_WIDTH;
+  cart_api->fb_pd = (new_surf_template.bounds.h << 8) / DISPLAY_HEIGHT;
+  cart_api->fb_height = new_surf_template.bounds.h;
 }
