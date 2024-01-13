@@ -282,9 +282,7 @@ bool display_mode_supported(blit::ScreenMode new_mode, const blit::SurfaceTempla
   if(new_surf_template.format != blit::PixelFormat::RGB565)
     return false;
 
-  blit::Size expected_bounds(DISPLAY_WIDTH, DISPLAY_HEIGHT);
-
-  if(new_surf_template.bounds == expected_bounds || new_surf_template.bounds == expected_bounds / 2)
+  if(new_surf_template.bounds.area() && new_surf_template.bounds.w <= DISPLAY_WIDTH && new_surf_template.bounds.h <= DISPLAY_HEIGHT)
     return true;
 
   return false;
