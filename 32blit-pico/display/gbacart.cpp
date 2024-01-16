@@ -251,9 +251,6 @@ void __no_inline_not_in_flash_func(core1_main)() {
 void init_display() {
   // take over core1
   multicore_launch_core1(core1_main);
-
-  // TODO: setting lores later will fail
-  blit::set_screen_mode(blit::ScreenMode::hires);
 }
 
 void update_display(uint32_t time) {
