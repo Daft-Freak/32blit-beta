@@ -165,8 +165,14 @@ pico_generate_pio_header(BlitHalPico ${CMAKE_CURRENT_LIST_DIR}/sd_card.pio)
 if(BLIT_DISPLAY_DRIVER STREQUAL "picovision")
     include(picovision_import.cmake)
 elseif(BLIT_DISPLAY_DRIVER STREQUAL "gbacart")
-    # TODO: push code, use FetchContent
-    add_subdirectory(gbacart/lib)
+    include(FetchContent)
+
+    FetchContent_Populate(gbacart
+        GIT_REPOSITORY https://github.com/Daft-Freak/pico-gba-cart
+        GIT_TAG a82edc9607f60b073a3351cc22418b48728150b9
+    )
+
+    add_subdirectory(${gbacart_SOURCE_DIR}/lib ${gbacart_BINARY_DIR} EXCLUDE_FROM_ALL)
 endif()
 
 # driver sources
