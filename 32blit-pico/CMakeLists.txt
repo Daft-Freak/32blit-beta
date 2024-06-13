@@ -165,7 +165,7 @@ elseif(BLIT_DISPLAY_DRIVER STREQUAL "gbacart")
 
     FetchContent_Populate(gbacart
         GIT_REPOSITORY https://github.com/Daft-Freak/pico-gba-cart
-        GIT_TAG f17da46a7257b03b9fd90c3332c027711ab5d581
+        GIT_TAG 0f61d075e3898573c5cbc60aacaf95b664677a71
     )
 
     add_subdirectory(${gbacart_SOURCE_DIR}/lib ${gbacart_BINARY_DIR} EXCLUDE_FROM_ALL)
