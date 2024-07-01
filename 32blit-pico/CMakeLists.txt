@@ -31,9 +31,6 @@ endfunction()
 
 add_library(BlitHalPico INTERFACE)
 target_sources(BlitHalPico INTERFACE
-    ${CMAKE_CURRENT_LIST_DIR}/../3rd-party/fatfs/ff.c
-    ${CMAKE_CURRENT_LIST_DIR}/../3rd-party/fatfs/ffunicode.c
-
     ${CMAKE_CURRENT_LIST_DIR}/blit-launch.cpp
     ${CMAKE_CURRENT_LIST_DIR}/display.cpp
     ${CMAKE_CURRENT_LIST_DIR}/file.cpp
@@ -50,11 +47,11 @@ target_link_libraries(BlitHalPico INTERFACE
     pico_multicore pico_stdlib pico_unique_id pico_rand
     tinyusb_device
     LauncherShared
+    FatFs
 )
 
 target_include_directories(BlitHalPico INTERFACE
     ${CMAKE_CURRENT_LIST_DIR} # for tusb_config
-    ${CMAKE_CURRENT_LIST_DIR}/../3rd-party/fatfs
 )
 
 target_compile_definitions(BlitHalPico INTERFACE
