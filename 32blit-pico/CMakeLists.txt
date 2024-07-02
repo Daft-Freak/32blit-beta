@@ -18,6 +18,8 @@ target_link_libraries(BlitEngine PUBLIC pico_cxx_options)
 # also enable function/data sectons
 target_compile_options(BlitEngine PRIVATE -ffunction-sections -fdata-sections)
 
+add_subdirectory(../32blit-shared ../32blit-shared)
+
 # driver helper
 # can override driver choice by pre-setting BLIT_x_DRIVER
 function(blit_driver DRV NAME)
@@ -47,7 +49,7 @@ target_link_libraries(BlitHalPico INTERFACE
     pico_multicore pico_stdlib pico_unique_id pico_rand
     tinyusb_device
     LauncherShared
-    FatFs
+    FatFsBlitAPI
 )
 
 target_include_directories(BlitHalPico INTERFACE
