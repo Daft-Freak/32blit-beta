@@ -191,6 +191,32 @@ static void send_init_sequence() {
 
   int window_x = 0, window_y = 0;
 
+#ifdef LCD_ILI9488
+  if(DISPLAY_WIDTH == 480 && DISPLAY_HEIGHT == 320) {
+    command(0xC0, 2, "\x17\x12"); // PWCTRL1
+    command(0xC1, 1, "\x41"); // PWCTRL2
+    command(0xC5, 3, "\x00\x12\x80"); // VMCTRL
+
+    command(0xB1, 1, "\xA0"); // FRMCTR1 (60Hz)
+    command(0xB7, 1, "\x86"); // ETMOD
+
+    command(0XE0, 15, "\x00\x03\x09\x08\x16\x0A\x3F\x78\x4C\x09\x0A\x08\x16\x1A\x0F"); // PGAMCTRL
+    command(0XE1, 15, "\x00\x16\x19\x03\x0F\x05\x32\x45\x46\x04\x0E\x0D\x35\x37\x0F"); // NGAMCTRL
+  }
+
+  command(MIPIDCS::ExitSleepMode);  // leave sleep mode
+  command(MIPIDCS::DisplayOn);  // turn display on
+
+  sleep_ms(100);
+
+  uint8_t madctl = rotations[LCD_ROTATION / 90];
+
+  madctl ^= (MADCTL::COL_ORDER | MADCTL::HORIZ_ORDER); // extra x flipping
+
+  command(MIPIDCS::SetAddressMode, 1, (char *)&madctl);
+
+#else // ST7789, the default
+
   if(DISPLAY_WIDTH == 240 && DISPLAY_HEIGHT == 240) {
     command(ST7789Reg::PORCTRL, 5, "\x0c\x0c\x00\x33\x33");
     command(ST7789Reg::GCTRL, 1, "\x14");
@@ -240,6 +266,7 @@ static void send_init_sequence() {
     window_x = 40;
     window_y = 53;
   }
+#endif
 
   set_window(window_x, window_y, DISPLAY_WIDTH, DISPLAY_HEIGHT);
 }
