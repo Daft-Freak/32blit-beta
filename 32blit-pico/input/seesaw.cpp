@@ -89,6 +89,25 @@ enum class Function : uint8_t {
   ADC_CHANNEL20  = 0x1B,
 };
 
+enum class SeesawState {
+  GPIORequest = 0,
+  GPIORead,
+
+  AnalogXRequest,
+  AnalogXRead,
+
+  AnalogYRequest,
+  AnalogYRead,
+
+  Done,
+};
+
+static SeesawState state = SeesawState::GPIORead;
+static int alarm_num;
+
+static uint32_t gpioState = ~0;
+static uint16_t analogXState = 0xFF01, analogYState = 0xFF01;
+
 static void seesaw_read(Module module, Function function, uint8_t *data, int len, int delay_us) {
   uint8_t cmd[]{uint8_t(module), uint8_t(function)};
   i2c_write_blocking(SEESAW_I2C, SEESAW_ADDR, cmd, 2, false);
@@ -114,6 +133,65 @@ static void seesaw_write(Module module, Function function, uint8_t *data, int le
   while(!(i2c_get_hw(SEESAW_I2C)->raw_intr_stat & I2C_IC_RAW_INTR_STAT_STOP_DET_BITS));
 
   SEESAW_I2C->restart_on_next = false;
+}
+
+static void seesaw_alarm_callback(uint alarm_num) {
+  timer_hw->intr = 1 << alarm_num;
+
+  switch(state) {
+    case SeesawState::GPIORequest: {
+      uint8_t cmd[]{uint8_t(Module::GPIO), uint8_t(Function::GPIO_GPIO)};
+      i2c_write_blocking(SEESAW_I2C, SEESAW_ADDR, cmd, 2, false);
+
+      state = SeesawState::GPIORead;
+      hardware_alarm_set_target(alarm_num, make_timeout_time_us(250));
+      break;
+    }
+
+    case SeesawState::GPIORead: {
+      i2c_read_blocking(SEESAW_I2C, SEESAW_ADDR, (uint8_t *)&gpioState, 4, false);
+
+      state = SeesawState::AnalogXRequest;
+      hardware_alarm_set_target(alarm_num, make_timeout_time_us(100));
+      break;
+    }
+
+    case SeesawState::AnalogXRequest: {
+      uint8_t cmd[]{uint8_t(Module::ADC), uint8_t(Function::ADC_CHANNEL14)};
+      i2c_write_blocking(SEESAW_I2C, SEESAW_ADDR, cmd, 2, false);
+
+      state = SeesawState::AnalogXRead;
+      hardware_alarm_set_target(alarm_num, make_timeout_time_us(500));
+      break;
+    }
+
+    case SeesawState::AnalogXRead: {
+      i2c_read_blocking(SEESAW_I2C, SEESAW_ADDR, (uint8_t *)&analogXState, 2, false);
+
+      state = SeesawState::AnalogYRequest;
+      hardware_alarm_set_target(alarm_num, make_timeout_time_us(100));
+      break;
+    }
+
+    case SeesawState::AnalogYRequest: {
+      uint8_t cmd[]{uint8_t(Module::ADC), uint8_t(Function::ADC_CHANNEL15)};
+      i2c_write_blocking(SEESAW_I2C, SEESAW_ADDR, cmd, 2, false);
+
+      state = SeesawState::AnalogYRead;
+      hardware_alarm_set_target(alarm_num, make_timeout_time_us(500));
+      break;
+    }
+
+    case SeesawState::AnalogYRead: {
+      i2c_read_blocking(SEESAW_I2C, SEESAW_ADDR, (uint8_t *)&analogYState, 2, false);
+
+      state = SeesawState::Done;
+      break;
+    }
+
+    case SeesawState::Done:
+      break; // shouldn't happen
+  }
 }
 
 void init_input() {
@@ -145,12 +223,17 @@ void init_input() {
   // enable pullups
   seesaw_write(Module::GPIO, Function::GPIO_PULLENSET, (uint8_t *)&io_mask, 4);
   seesaw_write(Module::GPIO, Function::GPIO_SET, (uint8_t *)&io_mask, 4);
+
+  // setup an alarm for async polling
+  alarm_num = hardware_alarm_claim_unused(true);
+  hardware_alarm_set_callback(alarm_num, seesaw_alarm_callback);
+  hardware_alarm_set_target(alarm_num, make_timeout_time_ms(5));
+
+  seesaw_alarm_callback(alarm_num);
 }
 
 void update_input() {
-  uint32_t gpio;
-  seesaw_read(Module::GPIO, Function::GPIO_GPIO, (uint8_t *)&gpio, 4, 250);
-  gpio = __builtin_bswap32(gpio);
+  uint32_t gpio = __builtin_bswap32(gpioState);
 
   uint32_t new_buttons = 0;
 
@@ -175,11 +258,12 @@ void update_input() {
   blit::api.buttons = new_buttons;
 
   // joystick
-  // this takes a whole millisecond
-  uint16_t adcVal;
-  seesaw_read(Module::ADC, Function::ADC_CHANNEL14, (uint8_t *)&adcVal, 2, 500);
-  blit::api.joystick.x = (1023 - __builtin_bswap16(adcVal)) / 512.0f - 1.0f;
+  blit::api.joystick.x = (1023 - __builtin_bswap16(analogXState)) / 512.0f - 1.0f;
+  blit::api.joystick.y = __builtin_bswap16(analogYState) / 512.0f - 1.0f;
 
-  seesaw_read(Module::ADC, Function::ADC_CHANNEL15, (uint8_t *)&adcVal, 2, 500);
-  blit::api.joystick.y = __builtin_bswap16(adcVal) / 512.0f - 1.0f; 
+  // start new read cycle
+  if(state == SeesawState::Done) {
+    state = SeesawState::GPIORequest;
+    seesaw_alarm_callback(alarm_num);
+  }
 }
