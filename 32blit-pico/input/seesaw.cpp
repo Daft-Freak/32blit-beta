@@ -255,11 +255,26 @@ void update_input() {
   if(!(gpio & (1 << SEESAW_SELECT_IO)))
     new_buttons |= blit::Button::MENU;
 
-  blit::api.buttons = new_buttons;
+#ifdef SEESAW_JOYSTICK_AS_DPAD
+  int x = (1023 - __builtin_bswap16(analogXState)) - 512;
+  int y = __builtin_bswap16(analogYState) - 512;
 
+  if(x < -256)
+    new_buttons |= blit::Button::DPAD_LEFT;
+  else if(x > 256)
+    new_buttons |= blit::Button::DPAD_RIGHT;
+  if(y < -256)
+    new_buttons |= blit::Button::DPAD_UP;
+  else if(y > 256)
+    new_buttons |= blit::Button::DPAD_DOWN;
+  
+#else
   // joystick
   blit::api.joystick.x = (1023 - __builtin_bswap16(analogXState)) / 512.0f - 1.0f;
   blit::api.joystick.y = __builtin_bswap16(analogYState) / 512.0f - 1.0f;
+#endif
+
+  blit::api.buttons = new_buttons;
 
   // start new read cycle
   if(state == SeesawState::Done) {
