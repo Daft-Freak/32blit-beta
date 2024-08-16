@@ -110,7 +110,8 @@ static uint16_t analogXState = 0xFF01, analogYState = 0xFF01;
 
 static void seesaw_read(Module module, Function function, uint8_t *data, int len, int delay_us) {
   uint8_t cmd[]{uint8_t(module), uint8_t(function)};
-  i2c_write_blocking(SEESAW_I2C, SEESAW_ADDR, cmd, 2, false);
+  if(i2c_write_blocking_until(SEESAW_I2C, SEESAW_ADDR, cmd, 2, true, make_timeout_time_ms(1)) != 2)
+    return;
 
   sleep_us(delay_us);
 
@@ -120,7 +121,8 @@ static void seesaw_read(Module module, Function function, uint8_t *data, int len
 static void seesaw_write(Module module, Function function, uint8_t *data, int len) {
   uint8_t cmd[]{uint8_t(module), uint8_t(function)};
 
-  i2c_write_blocking(SEESAW_I2C, SEESAW_ADDR, cmd, 2, true);
+  if(i2c_write_blocking_until(SEESAW_I2C, SEESAW_ADDR, cmd, 2, true, make_timeout_time_ms(1)) != 2)
+    return;
 
   // write the rest manually
   // (we don't want a RESTART and write_raw doesn't do a STOP)
@@ -141,15 +143,18 @@ static void seesaw_alarm_callback(uint alarm_num) {
   switch(state) {
     case SeesawState::GPIORequest: {
       uint8_t cmd[]{uint8_t(Module::GPIO), uint8_t(Function::GPIO_GPIO)};
-      i2c_write_blocking(SEESAW_I2C, SEESAW_ADDR, cmd, 2, false);
+      auto timeout = make_timeout_time_us(500);
 
-      state = SeesawState::GPIORead;
+      if(i2c_write_blocking_until(SEESAW_I2C, SEESAW_ADDR, cmd, 2, false, timeout) == 2)
+        state = SeesawState::GPIORead;
+
       hardware_alarm_set_target(alarm_num, make_timeout_time_us(250));
       break;
     }
 
     case SeesawState::GPIORead: {
-      i2c_read_blocking(SEESAW_I2C, SEESAW_ADDR, (uint8_t *)&gpioState, 4, false);
+      auto timeout = make_timeout_time_us(1000);
+      i2c_read_blocking_until(SEESAW_I2C, SEESAW_ADDR, (uint8_t *)&gpioState, 4, false, timeout);
 
       state = SeesawState::AnalogXRequest;
       hardware_alarm_set_target(alarm_num, make_timeout_time_us(100));
@@ -158,15 +163,18 @@ static void seesaw_alarm_callback(uint alarm_num) {
 
     case SeesawState::AnalogXRequest: {
       uint8_t cmd[]{uint8_t(Module::ADC), uint8_t(Function::ADC_CHANNEL14)};
-      i2c_write_blocking(SEESAW_I2C, SEESAW_ADDR, cmd, 2, false);
+      auto timeout = make_timeout_time_us(500);
+  
+      if(i2c_write_blocking_until(SEESAW_I2C, SEESAW_ADDR, cmd, 2, false, timeout) == 2)
+        state = SeesawState::AnalogXRead;
 
-      state = SeesawState::AnalogXRead;
       hardware_alarm_set_target(alarm_num, make_timeout_time_us(500));
       break;
     }
 
     case SeesawState::AnalogXRead: {
-      i2c_read_blocking(SEESAW_I2C, SEESAW_ADDR, (uint8_t *)&analogXState, 2, false);
+      auto timeout = make_timeout_time_us(1000);
+      i2c_read_blocking_until(SEESAW_I2C, SEESAW_ADDR, (uint8_t *)&analogXState, 2, false, timeout);
 
       state = SeesawState::AnalogYRequest;
       hardware_alarm_set_target(alarm_num, make_timeout_time_us(100));
@@ -175,15 +183,18 @@ static void seesaw_alarm_callback(uint alarm_num) {
 
     case SeesawState::AnalogYRequest: {
       uint8_t cmd[]{uint8_t(Module::ADC), uint8_t(Function::ADC_CHANNEL15)};
-      i2c_write_blocking(SEESAW_I2C, SEESAW_ADDR, cmd, 2, false);
+      auto timeout = make_timeout_time_us(500);
 
-      state = SeesawState::AnalogYRead;
+      if(i2c_write_blocking_until(SEESAW_I2C, SEESAW_ADDR, cmd, 2, false, timeout) == 2)
+        state = SeesawState::AnalogYRead;
+
       hardware_alarm_set_target(alarm_num, make_timeout_time_us(500));
       break;
     }
 
     case SeesawState::AnalogYRead: {
-      i2c_read_blocking(SEESAW_I2C, SEESAW_ADDR, (uint8_t *)&analogYState, 2, false);
+      auto timeout = make_timeout_time_us(1000);
+      i2c_read_blocking_until(SEESAW_I2C, SEESAW_ADDR, (uint8_t *)&analogYState, 2, false, timeout);
 
       state = SeesawState::Done;
       break;
