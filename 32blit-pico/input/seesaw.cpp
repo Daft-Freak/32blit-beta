@@ -26,6 +26,10 @@
 #define SEESAW_ADDR 0x50
 #endif
 
+#ifndef SEESAW_COUNT
+#define SEESAW_COUNT 1
+#endif
+
 // gamepad
 #define SEESAW_A_IO 5
 #define SEESAW_B_IO 1
@@ -89,7 +93,7 @@ enum class Function : uint8_t {
   ADC_CHANNEL20  = 0x1B,
 };
 
-enum class SeesawState {
+enum class SeesawState : uint8_t {
   GPIORequest = 0,
   GPIORead,
 
@@ -103,25 +107,26 @@ enum class SeesawState {
 };
 
 static SeesawState state = SeesawState::GPIORead;
+static uint8_t seesaw_index = 0;
 static int alarm_num;
 
-static uint32_t gpioState = ~0;
-static uint16_t analogXState = 0xFF01, analogYState = 0xFF01;
+static uint32_t gpioState[SEESAW_COUNT];
+static uint16_t analogXState[SEESAW_COUNT], analogYState[SEESAW_COUNT];
 
-static void seesaw_read(Module module, Function function, uint8_t *data, int len, int delay_us) {
+static void seesaw_read(uint8_t i2c_addr, Module module, Function function, uint8_t *data, int len, int delay_us) {
   uint8_t cmd[]{uint8_t(module), uint8_t(function)};
-  if(i2c_write_blocking_until(SEESAW_I2C, SEESAW_ADDR, cmd, 2, true, make_timeout_time_ms(1)) != 2)
+  if(i2c_write_blocking_until(SEESAW_I2C, i2c_addr, cmd, 2, true, make_timeout_time_ms(1)) != 2)
     return;
 
   sleep_us(delay_us);
 
-  i2c_read_blocking(SEESAW_I2C, SEESAW_ADDR, data, len, false);
+  i2c_read_blocking(SEESAW_I2C, i2c_addr, data, len, false);
 }
 
-static void seesaw_write(Module module, Function function, uint8_t *data, int len) {
+static void seesaw_write(uint8_t i2c_addr, Module module, Function function, uint8_t *data, int len) {
   uint8_t cmd[]{uint8_t(module), uint8_t(function)};
 
-  if(i2c_write_blocking_until(SEESAW_I2C, SEESAW_ADDR, cmd, 2, true, make_timeout_time_ms(1)) != 2)
+  if(i2c_write_blocking_until(SEESAW_I2C, i2c_addr, cmd, 2, true, make_timeout_time_ms(1)) != 2)
     return;
 
   // write the rest manually
@@ -145,7 +150,7 @@ static void seesaw_alarm_callback(uint alarm_num) {
       uint8_t cmd[]{uint8_t(Module::GPIO), uint8_t(Function::GPIO_GPIO)};
       auto timeout = make_timeout_time_us(500);
 
-      if(i2c_write_blocking_until(SEESAW_I2C, SEESAW_ADDR, cmd, 2, false, timeout) == 2)
+      if(i2c_write_blocking_until(SEESAW_I2C, SEESAW_ADDR + seesaw_index, cmd, 2, false, timeout) == 2)
         state = SeesawState::GPIORead;
 
       hardware_alarm_set_target(alarm_num, make_timeout_time_us(250));
@@ -154,7 +159,7 @@ static void seesaw_alarm_callback(uint alarm_num) {
 
     case SeesawState::GPIORead: {
       auto timeout = make_timeout_time_us(1000);
-      i2c_read_blocking_until(SEESAW_I2C, SEESAW_ADDR, (uint8_t *)&gpioState, 4, false, timeout);
+      i2c_read_blocking_until(SEESAW_I2C, SEESAW_ADDR + seesaw_index, (uint8_t *)&gpioState[seesaw_index], 4, false, timeout);
 
       state = SeesawState::AnalogXRequest;
       hardware_alarm_set_target(alarm_num, make_timeout_time_us(100));
@@ -165,7 +170,7 @@ static void seesaw_alarm_callback(uint alarm_num) {
       uint8_t cmd[]{uint8_t(Module::ADC), uint8_t(Function::ADC_CHANNEL14)};
       auto timeout = make_timeout_time_us(500);
   
-      if(i2c_write_blocking_until(SEESAW_I2C, SEESAW_ADDR, cmd, 2, false, timeout) == 2)
+      if(i2c_write_blocking_until(SEESAW_I2C, SEESAW_ADDR + seesaw_index, cmd, 2, false, timeout) == 2)
         state = SeesawState::AnalogXRead;
 
       hardware_alarm_set_target(alarm_num, make_timeout_time_us(500));
@@ -174,7 +179,7 @@ static void seesaw_alarm_callback(uint alarm_num) {
 
     case SeesawState::AnalogXRead: {
       auto timeout = make_timeout_time_us(1000);
-      i2c_read_blocking_until(SEESAW_I2C, SEESAW_ADDR, (uint8_t *)&analogXState, 2, false, timeout);
+      i2c_read_blocking_until(SEESAW_I2C, SEESAW_ADDR + seesaw_index, (uint8_t *)&analogXState[seesaw_index], 2, false, timeout);
 
       state = SeesawState::AnalogYRequest;
       hardware_alarm_set_target(alarm_num, make_timeout_time_us(100));
@@ -185,7 +190,7 @@ static void seesaw_alarm_callback(uint alarm_num) {
       uint8_t cmd[]{uint8_t(Module::ADC), uint8_t(Function::ADC_CHANNEL15)};
       auto timeout = make_timeout_time_us(500);
 
-      if(i2c_write_blocking_until(SEESAW_I2C, SEESAW_ADDR, cmd, 2, false, timeout) == 2)
+      if(i2c_write_blocking_until(SEESAW_I2C, SEESAW_ADDR + seesaw_index, cmd, 2, false, timeout) == 2)
         state = SeesawState::AnalogYRead;
 
       hardware_alarm_set_target(alarm_num, make_timeout_time_us(500));
@@ -194,9 +199,16 @@ static void seesaw_alarm_callback(uint alarm_num) {
 
     case SeesawState::AnalogYRead: {
       auto timeout = make_timeout_time_us(1000);
-      i2c_read_blocking_until(SEESAW_I2C, SEESAW_ADDR, (uint8_t *)&analogYState, 2, false, timeout);
+      i2c_read_blocking_until(SEESAW_I2C, SEESAW_ADDR + seesaw_index, (uint8_t *)&analogYState[seesaw_index], 2, false, timeout);
 
+      // stop if last device, otherwise move to the next one
+      if(++seesaw_index == SEESAW_COUNT) {
+        seesaw_index = 0;
       state = SeesawState::Done;
+      } else {
+        state = SeesawState::GPIORequest;
+        hardware_alarm_set_target(alarm_num, make_timeout_time_us(100));
+      }
       break;
     }
 
@@ -206,34 +218,45 @@ static void seesaw_alarm_callback(uint alarm_num) {
 }
 
 void init_input() {
+  // state
+  for(auto &gpio : gpioState)
+    gpio = ~0;
+
+  for(auto &x : analogXState)
+    x = 0xFF01;
+
+  for(auto &y : analogYState)
+    y = 0xFF01;
 
   // TODO: may want common i2c setup in the future?
   gpio_set_function(SEESAW_SDA_PIN, GPIO_FUNC_I2C);
   gpio_set_function(SEESAW_SCL_PIN, GPIO_FUNC_I2C);
-  i2c_init(SEESAW_I2C, 100000);
+  i2c_init(SEESAW_I2C, 400000);
 
+  for(int i = 0; i < SEESAW_COUNT; i++) {
   // get product id
   uint8_t version[4]{};
 
-  seesaw_read(Module::Status, Function::Status_VERSION, version, 4, 5);
+    seesaw_read(SEESAW_ADDR + i, Module::Status, Function::Status_VERSION, version, 4, 5);
 
   int product = version[0] << 8 | version[1]; // should check that this is 5743
   int day = version[2] >> 3;
   int month = (version[2] & 7) << 1 | version[3] >> 7;
   int year = version[3] & 0x7F;
 
-  printf("Seesaw product %i date 20%02i-%02i-%02i\n", product, year, month, day);
+    printf("Seesaw addr %02X product %i date 20%02i-%02i-%02i\n", SEESAW_ADDR + i, product, year, month, day);
 
   // init
   uint32_t io_mask = 1 << SEESAW_A_IO | 1 << SEESAW_B_IO | 1 << SEESAW_X_IO | 1 << SEESAW_Y_IO | 1 << SEESAW_START_IO | 1 << SEESAW_SELECT_IO;
   io_mask = __builtin_bswap32(io_mask); // seesaw is msb first
 
   // set inputs
-  seesaw_write(Module::GPIO, Function::GPIO_DIRCLR, (uint8_t *)&io_mask, 4);
+    seesaw_write(SEESAW_ADDR + i, Module::GPIO, Function::GPIO_DIRCLR, (uint8_t *)&io_mask, 4);
 
   // enable pullups
-  seesaw_write(Module::GPIO, Function::GPIO_PULLENSET, (uint8_t *)&io_mask, 4);
-  seesaw_write(Module::GPIO, Function::GPIO_SET, (uint8_t *)&io_mask, 4);
+    seesaw_write(SEESAW_ADDR + i, Module::GPIO, Function::GPIO_PULLENSET, (uint8_t *)&io_mask, 4);
+    seesaw_write(SEESAW_ADDR + i, Module::GPIO, Function::GPIO_SET, (uint8_t *)&io_mask, 4);
+  }
 
   // setup an alarm for async polling
   alarm_num = hardware_alarm_claim_unused(true);
@@ -244,7 +267,7 @@ void init_input() {
 }
 
 void update_input() {
-  uint32_t gpio = __builtin_bswap32(gpioState);
+  uint32_t gpio = __builtin_bswap32(gpioState[0]);
 
   uint32_t new_buttons = 0;
 
@@ -281,8 +304,8 @@ void update_input() {
   
 #else
   // joystick
-  blit::api.joystick.x = (1023 - __builtin_bswap16(analogXState)) / 512.0f - 1.0f;
-  blit::api.joystick.y = __builtin_bswap16(analogYState) / 512.0f - 1.0f;
+  blit::api.joystick.x = (1023 - __builtin_bswap16(analogXState[0])) / 512.0f - 1.0f;
+  blit::api.joystick.y = __builtin_bswap16(analogYState[0]) / 512.0f - 1.0f;
 #endif
 
   blit::api.buttons = new_buttons;
