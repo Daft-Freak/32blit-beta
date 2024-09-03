@@ -421,7 +421,7 @@ static void update() {
     auto stride = pixel_double ? win_h / 2 : win_h;
     auto count = pixel_double ? win_w / 2 : win_w;
     transpose_data(frame_buffer, (uint16_t *)temp_buffer, count, stride);
-    transpose_data(frame_buffer + 1, (uint16_t *)temp_buffer + win_w, count, stride);
+    transpose_data(frame_buffer + 1, (uint16_t *)temp_buffer + count, count, stride);
 
     cur_scanline = 1;
 
