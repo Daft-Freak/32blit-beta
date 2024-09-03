@@ -271,6 +271,7 @@ void update_input() {
 
   uint32_t new_buttons = 0;
 
+#if SEESAW_COUNT == 1
   if(!(gpio & (1 << SEESAW_A_IO)))
     new_buttons |= blit::Button::A;
 
@@ -289,6 +290,47 @@ void update_input() {
   if(!(gpio & (1 << SEESAW_SELECT_IO)))
     new_buttons |= blit::Button::MENU;
 
+#elif SEESAW_COUNT == 2
+  uint32_t gpio1 = __builtin_bswap32(gpioState[1]);
+  // assumes the two devices are sideways
+
+  if(!(gpio & (1 << SEESAW_A_IO)))
+    new_buttons |= blit::Button::DPAD_DOWN;
+
+  if(!(gpio & (1 << SEESAW_B_IO)))
+    new_buttons |= blit::Button::DPAD_LEFT;
+
+  if(!(gpio & (1 << SEESAW_X_IO)))
+    new_buttons |= blit::Button::DPAD_RIGHT;
+
+  if(!(gpio & (1 << SEESAW_Y_IO)))
+    new_buttons |= blit::Button::DPAD_UP;
+
+  if(!(gpio1 & (1 << SEESAW_A_IO)))
+    new_buttons |= blit::Button::X;
+
+  if(!(gpio1 & (1 << SEESAW_B_IO)))
+    new_buttons |= blit::Button::A;
+
+  if(!(gpio1 & (1 << SEESAW_X_IO)))
+    new_buttons |= blit::Button::Y;
+
+  if(!(gpio1 & (1 << SEESAW_Y_IO)))
+    new_buttons |= blit::Button::B;
+
+  if(!(gpio1 & (1 << SEESAW_START_IO)))
+    new_buttons |= blit::Button::HOME;
+
+  if(!(gpio1 & (1 << SEESAW_SELECT_IO)))
+    new_buttons |= blit::Button::MENU;
+
+  // don't have a joystick button and this is the only bit left
+  if(!(gpio & (1 << SEESAW_START_IO)))
+    new_buttons |= blit::Button::JOYSTICK;
+
+  // there's still an unused button
+#endif
+
 #ifdef SEESAW_JOYSTICK_AS_DPAD
   int x = (1023 - __builtin_bswap16(analogXState)) - 512;
   int y = __builtin_bswap16(analogYState) - 512;
@@ -301,7 +343,9 @@ void update_input() {
     new_buttons |= blit::Button::DPAD_UP;
   else if(y > 256)
     new_buttons |= blit::Button::DPAD_DOWN;
-  
+#elif SEESAW_COUNT == 2
+  blit::api.joystick.x = (1023 - __builtin_bswap16(analogYState[0])) / 512.0f - 1.0f;
+  blit::api.joystick.y = (1023 - __builtin_bswap16(analogXState[0])) / 512.0f - 1.0f;
 #else
   // joystick
   blit::api.joystick.x = (1023 - __builtin_bswap16(analogXState[0])) / 512.0f - 1.0f;
