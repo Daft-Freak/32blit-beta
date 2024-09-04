@@ -344,15 +344,15 @@ void update_input() {
   else if(y > 256)
     new_buttons |= blit::Button::DPAD_DOWN;
 #elif SEESAW_COUNT == 2
-  blit::api.joystick.x = (1023 - __builtin_bswap16(analogYState[0])) / 512.0f - 1.0f;
-  blit::api.joystick.y = (1023 - __builtin_bswap16(analogXState[0])) / 512.0f - 1.0f;
+  blit::api_data.joystick.x = (1023 - __builtin_bswap16(analogYState[0])) / 512.0f - 1.0f;
+  blit::api_data.joystick.y = (1023 - __builtin_bswap16(analogXState[0])) / 512.0f - 1.0f;
 #else
   // joystick
-  blit::api.joystick.x = (1023 - __builtin_bswap16(analogXState[0])) / 512.0f - 1.0f;
-  blit::api.joystick.y = __builtin_bswap16(analogYState[0]) / 512.0f - 1.0f;
+  blit::api_data.joystick.x = (1023 - __builtin_bswap16(analogXState[0])) / 512.0f - 1.0f;
+  blit::api_data.joystick.y = __builtin_bswap16(analogYState[0]) / 512.0f - 1.0f;
 #endif
 
-  blit::api.buttons = new_buttons;
+  blit::api_data.buttons = new_buttons;
 
   // start new read cycle
   if(state == SeesawState::Done) {
