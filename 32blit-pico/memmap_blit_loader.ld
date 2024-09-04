@@ -152,6 +152,7 @@ SECTIONS
     }
 
     .ram_vector_table (NOLOAD): {
+        . = ALIGN(256);
         *(.ram_vector_table)
     } > RAM
 
