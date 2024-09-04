@@ -204,7 +204,7 @@ static void seesaw_alarm_callback(uint alarm_num) {
       // stop if last device, otherwise move to the next one
       if(++seesaw_index == SEESAW_COUNT) {
         seesaw_index = 0;
-      state = SeesawState::Done;
+        state = SeesawState::Done;
       } else {
         state = SeesawState::GPIORequest;
         hardware_alarm_set_target(alarm_num, make_timeout_time_us(100));
@@ -234,26 +234,26 @@ void init_input() {
   i2c_init(SEESAW_I2C, 400000);
 
   for(int i = 0; i < SEESAW_COUNT; i++) {
-  // get product id
-  uint8_t version[4]{};
+    // get product id
+    uint8_t version[4]{};
 
     seesaw_read(SEESAW_ADDR + i, Module::Status, Function::Status_VERSION, version, 4, 5);
 
-  int product = version[0] << 8 | version[1]; // should check that this is 5743
-  int day = version[2] >> 3;
-  int month = (version[2] & 7) << 1 | version[3] >> 7;
-  int year = version[3] & 0x7F;
+    int product = version[0] << 8 | version[1]; // should check that this is 5743
+    int day = version[2] >> 3;
+    int month = (version[2] & 7) << 1 | version[3] >> 7;
+    int year = version[3] & 0x7F;
 
     printf("Seesaw addr %02X product %i date 20%02i-%02i-%02i\n", SEESAW_ADDR + i, product, year, month, day);
 
-  // init
-  uint32_t io_mask = 1 << SEESAW_A_IO | 1 << SEESAW_B_IO | 1 << SEESAW_X_IO | 1 << SEESAW_Y_IO | 1 << SEESAW_START_IO | 1 << SEESAW_SELECT_IO;
-  io_mask = __builtin_bswap32(io_mask); // seesaw is msb first
+    // init
+    uint32_t io_mask = 1 << SEESAW_A_IO | 1 << SEESAW_B_IO | 1 << SEESAW_X_IO | 1 << SEESAW_Y_IO | 1 << SEESAW_START_IO | 1 << SEESAW_SELECT_IO;
+    io_mask = __builtin_bswap32(io_mask); // seesaw is msb first
 
-  // set inputs
+    // set inputs
     seesaw_write(SEESAW_ADDR + i, Module::GPIO, Function::GPIO_DIRCLR, (uint8_t *)&io_mask, 4);
 
-  // enable pullups
+    // enable pullups
     seesaw_write(SEESAW_ADDR + i, Module::GPIO, Function::GPIO_PULLENSET, (uint8_t *)&io_mask, 4);
     seesaw_write(SEESAW_ADDR + i, Module::GPIO, Function::GPIO_SET, (uint8_t *)&io_mask, 4);
   }
