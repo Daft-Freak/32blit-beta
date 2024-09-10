@@ -361,6 +361,9 @@ static void send_init_sequence() {
 
   uint8_t madctl = rotations[LCD_ROTATION / 90];
 
+  if(LCD_TRANSPOSE)
+    madctl ^= MADCTL::SWAP_XY;
+
   madctl ^= (MADCTL::COL_ORDER | MADCTL::HORIZ_ORDER); // extra x flipping
 
   command(MIPIDCS::SetAddressMode, 1, (char *)&madctl);
