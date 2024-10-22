@@ -16,7 +16,7 @@ static uint32_t max_fb_size = 0;
 static Size max_fb_bounds(DISPLAY_WIDTH, DISPLAY_HEIGHT);
 #else
 uint16_t screen_fb[FRAMEBUFFER_SIZE];
-static const uint32_t max_fb_size = FRAMEBUFFER_SIZE;
+static const uint32_t max_fb_size = FRAMEBUFFER_SIZE * sizeof(uint16_t);
 #endif
 
 static Pen *screen_palette = nullptr;
