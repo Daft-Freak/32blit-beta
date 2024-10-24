@@ -11,6 +11,11 @@ extern void init();
 extern void update(uint32_t time);
 extern void render(uint32_t time);
 
+// override terminate handler to save ~20-30k
+namespace __cxxabiv1 {
+  std::terminate_handler __terminate_handler = std::abort;
+}
+
 extern "C" bool do_init() {
 #ifndef IGNORE_API_VERSION
   if(blit::api.version_major != blit::api_version_major)
