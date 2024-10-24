@@ -213,7 +213,6 @@ function(blit_executable NAME)
 
     add_executable(${NAME} ${SOURCES})
     target_link_libraries(${NAME} BlitEngine pico_platform_headers)
-    target_link_options(${NAME} PUBLIC -specs=nano.specs -u _printf_float)
     target_compile_definitions(${NAME} PRIVATE PICO_EMBED_XIP_SETUP=1)
 
     pico_enable_stdio_uart(${NAME} 1)
@@ -231,7 +230,7 @@ function(blit_executable NAME)
 
         pico_add_extra_outputs(${NAME})
 
-        install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${NAME}.uf2 
+        install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${NAME}.uf2
             DESTINATION bin
         )
     elseif(PICO_BLIT)
