@@ -31,6 +31,11 @@ int (*do_tick)(uint32_t time) = blit::tick;
 
 static alarm_id_t home_hold_alarm_id = 0;
 
+// override terminate handler to save ~20-30k
+namespace __cxxabiv1 {
+  std::terminate_handler __terminate_handler = std::abort;
+}
+
 static uint32_t now() {
   return to_ms_since_boot(get_absolute_time());
 }
