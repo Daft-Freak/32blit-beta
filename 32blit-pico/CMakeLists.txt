@@ -213,7 +213,6 @@ function(blit_executable NAME)
 
     add_executable(${NAME} ${SOURCES})
     target_link_libraries(${NAME} BlitEngine pico_platform_headers)
-    target_compile_definitions(${NAME} PRIVATE PICO_EMBED_XIP_SETUP=1)
 
     pico_enable_stdio_uart(${NAME} 1)
     if(NOT BLIT_USB_DRIVER STREQUAL "host")
@@ -230,7 +229,7 @@ function(blit_executable NAME)
             add_subdirectory(${LAUNCHERSHARED_DIR} launcher-shared)
         endif()
 
-        target_compile_definitions(${NAME} PRIVATE BLIT_PICO_STANDALONE=1)
+        target_compile_definitions(${NAME} PRIVATE BLIT_PICO_STANDALONE=1 PICO_EMBED_XIP_SETUP=1)
         target_link_libraries(${NAME} BlitHalPico)
 
         pico_add_extra_outputs(${NAME})
