@@ -289,7 +289,7 @@ void update_display(uint32_t time) {
     blit::render(time);
 
     // start dma after first render
-    if(!started) {
+    if(!started && blit::screen.data) {
       started = true;
       dma_channel_start(HSTX_DMA_CH_BASE);
     } else if(new_h_shift) {
