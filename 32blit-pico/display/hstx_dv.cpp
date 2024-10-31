@@ -297,6 +297,27 @@ void update_display(uint32_t time) {
     }
     do_render = false;
   }
+
+  // check if dma channels have encountered a read error and reset
+  // usually this happens because of a breakpoint
+  if((dma_hw->ch[HSTX_DMA_CH_BASE + 0].al1_ctrl & DMA_CH0_CTRL_TRIG_READ_ERROR_BITS) || (dma_hw->ch[HSTX_DMA_CH_BASE + 1].al1_ctrl & DMA_CH0_CTRL_TRIG_READ_ERROR_BITS)) {
+    // clear error
+    hw_set_bits(&dma_hw->ch[HSTX_DMA_CH_BASE + 0].al1_ctrl, DMA_CH0_CTRL_TRIG_READ_ERROR_BITS);
+    hw_set_bits(&dma_hw->ch[HSTX_DMA_CH_BASE + 1].al1_ctrl, DMA_CH0_CTRL_TRIG_READ_ERROR_BITS);
+
+    // disable/enable HSTX
+    hw_clear_bits(&hstx_ctrl_hw->csr, HSTX_CTRL_CSR_EN_BITS);
+    hw_set_bits(&hstx_ctrl_hw->csr, HSTX_CTRL_CSR_EN_BITS);
+
+    // restart DMA
+    v_scanline = 2;
+    cur_dma_ch = HSTX_DMA_CH_BASE;
+
+    dma_channel_set_read_addr(HSTX_DMA_CH_BASE + 0, vblank_line_vsync_off, false);
+    dma_channel_set_read_addr(HSTX_DMA_CH_BASE + 1, vblank_line_vsync_off, false);
+    dma_channel_set_trans_count(HSTX_DMA_CH_BASE + 1, std::size(vblank_line_vsync_off), false);
+    dma_channel_set_trans_count(HSTX_DMA_CH_BASE + 0, std::size(vblank_line_vsync_off), true);
+  }
 }
 
 void init_display_core1() {
