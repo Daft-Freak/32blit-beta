@@ -23,6 +23,7 @@
 #define SYNC_V1_H1 (TMDS_CTRL_11 | (TMDS_CTRL_00 << 10) | (TMDS_CTRL_00 << 20))
 
 // mode
+// active area needs to be consistent with (2x) DISPLAY_WIDTH/_HEIGHT
 //#define MODE_H_SYNC_POLARITY 0 // unused, assumed to be active-low
 #define MODE_H_FRONT_PORCH   16
 #define MODE_H_SYNC_WIDTH    96
@@ -314,10 +315,16 @@ bool display_mode_supported(blit::ScreenMode new_mode, const blit::SurfaceTempla
 
   blit::Size expected_bounds(DISPLAY_WIDTH, DISPLAY_HEIGHT);
 
-  if(new_surf_template.bounds == expected_bounds || new_surf_template.bounds == expected_bounds / 2)
-    return true;
+  auto w = new_surf_template.bounds.w;
+  auto h = new_surf_template.bounds.h;
 
-  return false;
+  if(w != MODE_H_ACTIVE_PIXELS / 2 && w != MODE_H_ACTIVE_PIXELS / 4)
+    return false;
+
+  if(h != MODE_V_ACTIVE_LINES && h != MODE_V_ACTIVE_LINES / 2 && h != MODE_V_ACTIVE_LINES / 4)
+    return false;
+
+  return true;
 }
 
 void display_mode_changed(blit::ScreenMode new_mode, blit::SurfaceTemplate &new_surf_template) {
