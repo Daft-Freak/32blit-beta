@@ -79,10 +79,8 @@ static uint32_t vblank_line_vsync_on[] = {
 static const uint32_t vactive_line[] = {
   HSTX_CMD_RAW_REPEAT | MODE_H_FRONT_PORCH,
   SYNC_V1_H1,
-  HSTX_CMD_NOP,
   HSTX_CMD_RAW_REPEAT | MODE_H_SYNC_WIDTH,
   SYNC_V1_H0,
-  HSTX_CMD_NOP,
   HSTX_CMD_RAW_REPEAT | MODE_H_BACK_PORCH,
   SYNC_V1_H1,
   HSTX_CMD_TMDS       | MODE_H_ACTIVE_PIXELS
@@ -123,7 +121,6 @@ void __scratch_x("") dma_irq_handler() {
 
   if (v_scanline >= MODE_V_FRONT_PORCH && v_scanline < (MODE_V_FRONT_PORCH + MODE_V_SYNC_WIDTH)) {
     ch->read_addr = (uintptr_t)vblank_line_vsync_on;
-    ch->transfer_count = std::size(vblank_line_vsync_off);
   } else if (v_scanline < MODE_V_FRONT_PORCH + MODE_V_SYNC_WIDTH + MODE_V_BACK_PORCH) {
     ch->read_addr = (uintptr_t)vblank_line_vsync_off;
     ch->transfer_count = std::size(vblank_line_vsync_off);
