@@ -23,7 +23,7 @@ uint8_t hid_keys[6]{};
 
 static void switch_pro_mount(uint8_t dev_addr, uint8_t instance) {
   uint8_t data = 2; // handshake
-#if 0 // TUSB_VERSION_MINOR >= 16 probably
+#if TUSB_VERSION_MINOR >= 16
   tuh_hid_send_report(dev_addr, instance, 0x80, &data, 1);
 #endif
   // report descriptor is inaccurate
@@ -38,7 +38,7 @@ static void switch_pro_mount(uint8_t dev_addr, uint8_t instance) {
 static void switch_pro_report(uint8_t dev_addr, uint8_t instance, uint8_t const* report, uint16_t len) {
   if(report[0] == 0x81 && report[1] == 2) { // handshake
     uint8_t data = 4; // disable bluetooth / enable usb
-#if 0
+#if TUSB_VERSION_MINOR >= 16
     tuh_hid_send_report(dev_addr, instance, 0x80, &data, 1);
 #endif
   }
