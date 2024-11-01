@@ -90,6 +90,7 @@ static const uint32_t vactive_line[] = {
 // DMA logic
 
 #define HSTX_DMA_CH_BASE 0
+#define HSTX_NUM_DMA_CHANNELS 2
 
 static uint8_t cur_dma_ch = HSTX_DMA_CH_BASE;
 
@@ -99,10 +100,7 @@ static uint8_t v_shift = 0;
 static uint8_t new_h_shift = 0;
 static uint8_t new_v_shift = 0;
 
-// A ping and a pong are cued up initially, so the first time we enter this
-// handler it is to cue up the second ping after the first ping has completed.
-// This is the third scanline overall (-> =2 because zero-based).
-static uint v_scanline = 2;
+static uint v_scanline = HSTX_NUM_DMA_CHANNELS;
 
 static bool started = false;
 static volatile bool do_render = true;
@@ -118,7 +116,11 @@ void __scratch_x("") dma_irq_handler() {
   // we're about to reload.
   dma_channel_hw_t *ch = &dma_hw->ch[cur_dma_ch];
   dma_hw->intr = 1u << cur_dma_ch;
-  cur_dma_ch ^= 1;
+
+  if(cur_dma_ch + 1 == HSTX_DMA_CH_BASE + HSTX_NUM_DMA_CHANNELS)
+    cur_dma_ch = HSTX_DMA_CH_BASE;
+  else
+    cur_dma_ch++;
 
   if (v_scanline >= MODE_V_FRONT_PORCH && v_scanline < (MODE_V_FRONT_PORCH + MODE_V_SYNC_WIDTH)) {
     ch->read_addr = (uintptr_t)vblank_line_vsync_on;
@@ -245,17 +247,19 @@ void init_display() {
   for(int i = 12; i <= 19; ++i)
     gpio_set_function(i, GPIO_FUNC_HSTX);
 
-  // Both channels are set up identically, to transfer a whole scanline and
-  // then chain to the opposite channel. Each time a channel finishes, we
-  // reconfigure the one that just finished, meanwhile the opposite channel
+  // All channels are set up identically, to transfer a whole scanline and
+  // then chain to the next channel. Each time a channel finishes, we
+  // reconfigure the one that just finished, meanwhile the next channel
   // is already making progress.
-  dma_channel_claim(HSTX_DMA_CH_BASE + 0);
-  dma_channel_claim(HSTX_DMA_CH_BASE + 1);
 
-  for(int i = 0; i < 2; i++) {
+  for(int i = 0; i < HSTX_NUM_DMA_CHANNELS; i++) {
+    dma_channel_claim(HSTX_DMA_CH_BASE + i);
     dma_channel_config c;
     c = dma_channel_get_default_config(HSTX_DMA_CH_BASE + i);
-    channel_config_set_chain_to(&c, (HSTX_DMA_CH_BASE + i) ^ 1);
+
+    int next_chan = i == (HSTX_NUM_DMA_CHANNELS - 1) ? 0 : i + 1;
+
+    channel_config_set_chain_to(&c, HSTX_DMA_CH_BASE + next_chan);
     channel_config_set_dreq(&c, DREQ_HSTX);
     dma_channel_configure(
       HSTX_DMA_CH_BASE + i,
@@ -267,8 +271,10 @@ void init_display() {
     );
   }
 
-  dma_hw->ints0 = (3u << HSTX_DMA_CH_BASE);
-  dma_hw->inte0 = (3u << HSTX_DMA_CH_BASE);
+  const unsigned chan_mask = (1 << HSTX_NUM_DMA_CHANNELS) - 1;
+
+  dma_hw->ints0 = (chan_mask << HSTX_DMA_CH_BASE);
+  dma_hw->inte0 = (chan_mask << HSTX_DMA_CH_BASE);
   irq_set_exclusive_handler(DMA_IRQ_0, dma_irq_handler);
   irq_set_enabled(DMA_IRQ_0, true);
 
@@ -300,10 +306,14 @@ void update_display(uint32_t time) {
 
   // check if dma channels have encountered a read error and reset
   // usually this happens because of a breakpoint
-  if((dma_hw->ch[HSTX_DMA_CH_BASE + 0].al1_ctrl & DMA_CH0_CTRL_TRIG_READ_ERROR_BITS) || (dma_hw->ch[HSTX_DMA_CH_BASE + 1].al1_ctrl & DMA_CH0_CTRL_TRIG_READ_ERROR_BITS)) {
-    // clear error
-    hw_set_bits(&dma_hw->ch[HSTX_DMA_CH_BASE + 0].al1_ctrl, DMA_CH0_CTRL_TRIG_READ_ERROR_BITS);
-    hw_set_bits(&dma_hw->ch[HSTX_DMA_CH_BASE + 1].al1_ctrl, DMA_CH0_CTRL_TRIG_READ_ERROR_BITS);
+  bool error = false;
+
+  for(int i = 0; i < HSTX_NUM_DMA_CHANNELS; i++)
+    error = error || (dma_hw->ch[HSTX_DMA_CH_BASE + i].al1_ctrl & DMA_CH0_CTRL_TRIG_READ_ERROR_BITS);
+
+  if(error) {
+    for(int i = 0; i < HSTX_NUM_DMA_CHANNELS; i++)
+      hw_set_bits(&dma_hw->ch[HSTX_DMA_CH_BASE + i].al1_ctrl, DMA_CH0_CTRL_TRIG_READ_ERROR_BITS);
 
     // disable/enable HSTX
     hw_clear_bits(&hstx_ctrl_hw->csr, HSTX_CTRL_CSR_EN_BITS);
@@ -313,10 +323,12 @@ void update_display(uint32_t time) {
     v_scanline = 2;
     cur_dma_ch = HSTX_DMA_CH_BASE;
 
-    dma_channel_set_read_addr(HSTX_DMA_CH_BASE + 0, vblank_line_vsync_off, false);
-    dma_channel_set_read_addr(HSTX_DMA_CH_BASE + 1, vblank_line_vsync_off, false);
-    dma_channel_set_trans_count(HSTX_DMA_CH_BASE + 1, std::size(vblank_line_vsync_off), false);
-    dma_channel_set_trans_count(HSTX_DMA_CH_BASE + 0, std::size(vblank_line_vsync_off), true);
+    for(int i = 0; i < HSTX_NUM_DMA_CHANNELS; i++) {
+      dma_channel_set_read_addr(HSTX_DMA_CH_BASE + i, vblank_line_vsync_off, false);
+      dma_channel_set_trans_count(HSTX_DMA_CH_BASE + i, std::size(vblank_line_vsync_off), false);
+    }
+
+    dma_channel_start(HSTX_DMA_CH_BASE);
   }
 }
 
