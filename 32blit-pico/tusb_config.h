@@ -123,7 +123,7 @@
 //------------- HID -------------//
 
 #define CFG_TUH_HID_EPIN_BUFSIZE      64
-#define CFG_TUH_HID_EPOUT_BUFSIZE     8
+#define CFG_TUH_HID_EPOUT_BUFSIZE     16
 
 #else
 
