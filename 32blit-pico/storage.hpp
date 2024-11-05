@@ -4,6 +4,7 @@
 bool storage_init();
 
 bool is_storage_available();
+bool has_storage_changed();
 
 void get_storage_size(uint16_t &block_size, uint32_t &num_blocks);
 
