@@ -541,6 +541,10 @@ bool is_storage_available() {
   return card_size_blocks != 0;
 }
 
+bool has_storage_changed() {
+  return false;
+}
+
 void get_storage_size(uint16_t &block_size, uint32_t &num_blocks) {
   block_size = 512;
   num_blocks = card_size_blocks;
