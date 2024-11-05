@@ -338,6 +338,7 @@ int main() {
     update_led();
     update_usb();
     update_multiplayer();
+    update_fs();
 
     // do requested launch when no user code is running
     delayed_launch();
