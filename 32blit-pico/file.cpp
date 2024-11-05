@@ -81,6 +81,11 @@ void init_fs() {
     printf("Failed to mount filesystem! (%i)\n", res);
 }
 
+void update_fs() {
+  if(has_storage_changed())
+    init_fs();
+}
+
 static char save_path[32]; // max game title length is 24 + ".blit/" + "/"
 
 const char *get_save_path() {
