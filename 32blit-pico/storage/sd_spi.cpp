@@ -257,6 +257,17 @@ static uint8_t sd_command_write_block(uint8_t cmd, uint32_t addr, const uint8_t 
   return res;
 }
 
+#ifdef SD_DETECT
+static bool check_card_detect() {
+  // E9-safe read
+  gpio_set_input_enabled(SD_DETECT, true);
+  bool ret = gpio_get(SD_DETECT);
+  gpio_set_input_enabled(SD_DETECT, false);
+
+  return ret;
+}
+#endif
+
 bool storage_init() {
   bi_decl_if_func_used(bi_4pins_with_names(SD_MISO, "SD RX", SD_MOSI, "SD TX", SD_SCK, "SD SCK", SD_CS, "SD CS"));
 
@@ -295,8 +306,25 @@ bool storage_init() {
     gpio_set_dir(SD_CS, GPIO_OUT);
     gpio_put(SD_CS, 1);
 
+#ifdef SD_DETECT
+    bi_decl_if_func_used(bi_1pin_with_name(SD_DETECT, "SD Detect"));
+
+    gpio_set_function(SD_DETECT, GPIO_FUNC_SIO);
+    gpio_set_dir(SD_DETECT, GPIO_IN);
+    gpio_set_pulls(SD_DETECT, false, true);
+
+    gpio_set_input_enabled(SD_DETECT, false);
+#endif
+
     sd_io_initialised = true;
   }
+
+  card_size_blocks = 0;
+
+#ifdef SD_DETECT
+  if(!check_card_detect())
+    return false;
+#endif
 
   // go slow for init
   pio_sm_set_clkdiv(sd_pio, sd_sm, 250);
@@ -419,7 +447,12 @@ bool is_storage_available() {
 }
 
 bool has_storage_changed() {
-  return false;
+  bool present = true;
+#ifdef SD_DETECT
+  present = check_card_detect();
+#endif
+
+  return present != (card_size_blocks != 0);
 }
 
 void get_storage_size(uint16_t &block_size, uint32_t &num_blocks) {
