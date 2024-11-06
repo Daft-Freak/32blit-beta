@@ -447,12 +447,13 @@ bool is_storage_available() {
 }
 
 bool has_storage_changed() {
-  bool present = true;
 #ifdef SD_DETECT
-  present = check_card_detect();
-#endif
+  bool present = check_card_detect();
 
   return present != (card_size_blocks != 0);
+#else
+  return false;
+#endif
 }
 
 void get_storage_size(uint16_t &block_size, uint32_t &num_blocks) {
