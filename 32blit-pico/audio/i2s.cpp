@@ -46,6 +46,13 @@ static void __not_in_flash_func(i2s_irq_handler)() {
 }
 
 void init_audio() {
+
+#ifdef AUDIO_I2S_MUTE_PIN
+  gpio_set_dir(AUDIO_I2S_MUTE_PIN, GPIO_OUT);
+  gpio_put(AUDIO_I2S_MUTE_PIN, 1);
+  gpio_set_function(AUDIO_I2S_MUTE_PIN, GPIO_FUNC_SIO);
+#endif
+
   // setup PIO
 
 #if AUDIO_I2S_DATA_PIN >= 32 || AUDIO_I2S_CLOCK_PIN_BASE >= 31
