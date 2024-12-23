@@ -14,14 +14,6 @@
 #define SEESAW_I2C i2c_default
 #endif
 
-#ifndef SEESAW_SDA_PIN
-#define SEESAW_SDA_PIN PICO_DEFAULT_I2C_SDA_PIN
-#endif
-
-#ifndef SEESAW_SCL_PIN
-#define SEESAW_SCL_PIN PICO_DEFAULT_I2C_SCL_PIN
-#endif
-
 #ifndef SEESAW_ADDR
 #define SEESAW_ADDR 0x50
 #endif
@@ -40,7 +32,7 @@
 
 enum class Module : uint8_t {
   Status = 0,
-  GPIO = 1, 
+  GPIO = 1,
   // ...
   ADC = 9,
   // ...
@@ -169,7 +161,7 @@ static void seesaw_alarm_callback(uint alarm_num) {
     case SeesawState::AnalogXRequest: {
       uint8_t cmd[]{uint8_t(Module::ADC), uint8_t(Function::ADC_CHANNEL14)};
       auto timeout = make_timeout_time_us(500);
-  
+
       if(i2c_write_blocking_until(SEESAW_I2C, SEESAW_ADDR + seesaw_index, cmd, 2, false, timeout) == 2)
         state = SeesawState::AnalogXRead;
 
@@ -227,11 +219,6 @@ void init_input() {
 
   for(auto &y : analogYState)
     y = 0xFF01;
-
-  // TODO: may want common i2c setup in the future?
-  gpio_set_function(SEESAW_SDA_PIN, GPIO_FUNC_I2C);
-  gpio_set_function(SEESAW_SCL_PIN, GPIO_FUNC_I2C);
-  i2c_init(SEESAW_I2C, 400000);
 
   for(int i = 0; i < SEESAW_COUNT; i++) {
     // get product id
