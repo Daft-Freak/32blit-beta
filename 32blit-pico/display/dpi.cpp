@@ -225,6 +225,32 @@ static void init_display_spi() {
   sleep_ms(15);
 #endif
 
+#ifdef DPI_ST7796S
+  // pile of magic
+  command(0xF0, 1, "\xC3"); // CSCON (enable part 1)
+  command(0xF0, 1, "\x96"); // CSCON (enable part 2)
+
+  command(0xB0, 1, "\x80"); // IFMODE (SPI_EN)
+
+  command(0xE8, 8, "\x40\x8A\x00\x00\x29\x19\xA5\x33"); // DOCA (S_END=9, G_START=25, G_EQ, G_END=21)
+
+  command(0xC2, 1, "\xA7"); // PWR3 (SOP=1, GOP=3)
+
+  // setup for RGB sync mode
+  command(0xB6, 2, "\xE0\x02\3B"); // DFC (BYPASS, RCM, RM)
+  command(0xB5, 4, "\x08\x08\x00\x3E"); // BPC(VFP=8, VBP=8, HBP=62)
+
+  command(0xF0, 1, "\xC3"); // CSCON (disable part 1)
+  command(0xF0, 1, "\x69"); // CSCON (disable part 2)
+
+  command(MIPIDCS::SetPixelFormat, 1, "\x55"); // (16bpp)
+  // can set ML/RGB/MH, others control memory access and have no effect
+  uint8_t madctl = MADCTL::RGB | MADCTL::HORIZ_ORDER;
+  command(MIPIDCS::SetAddressMode, 1, (char *)&madctl);
+
+  command(MIPIDCS::ExitSleepMode);
+  command(MIPIDCS::DisplayOn);
+#endif
 #endif
 }
 
