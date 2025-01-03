@@ -20,6 +20,7 @@
 #include "input.hpp"
 #include "led.hpp"
 #include "multiplayer.hpp"
+#include "sensor.hpp"
 #include "storage.hpp"
 #include "usb.hpp"
 
@@ -298,6 +299,7 @@ int main() {
   init_led();
   init_display();
   init_input();
+  init_sensor();
   init_fs();
   init_usb();
 #if !defined(ENABLE_CORE1)
@@ -334,6 +336,7 @@ int main() {
 
     update_input();
     check_home_button();
+    update_sensor(now);
 
     int ms_to_next_update = do_tick(::now());
 
