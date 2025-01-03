@@ -8,7 +8,7 @@
 #include "pico/time.h"
 
 #include "display.hpp"
-#include "display-commands.hpp"
+#include "display_commands.hpp"
 
 #include "config.h"
 

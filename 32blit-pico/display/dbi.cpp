@@ -2,7 +2,7 @@
 #include <math.h>
 
 #include "display.hpp"
-#include "display-commands.hpp"
+#include "display_commands.hpp"
 
 #include "hardware/clocks.h"
 #include "hardware/dma.h"
