@@ -111,6 +111,10 @@ endif()
 if(NOT BLIT_LED_DRIVER)
     set(BLIT_LED_DRIVER "none")
 endif()
+# TODO: make this a list of drivers for multiple sensors
+if(NOT BLIT_SENSOR_DRIVER)
+    set(BLIT_SENSOR_DRIVER "none")
+endif()
 if(NOT BLIT_STORAGE_DRIVER)
     set(BLIT_STORAGE_DRIVER "flash")
 endif()
@@ -183,6 +187,7 @@ target_sources(BlitHalPico INTERFACE
     ${CMAKE_CURRENT_LIST_DIR}/display/${BLIT_DISPLAY_DRIVER}.cpp
     ${CMAKE_CURRENT_LIST_DIR}/input/${BLIT_INPUT_DRIVER}.cpp
     ${CMAKE_CURRENT_LIST_DIR}/led/${BLIT_LED_DRIVER}.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/sensor/${BLIT_SENSOR_DRIVER}.cpp
     ${CMAKE_CURRENT_LIST_DIR}/storage/${BLIT_STORAGE_DRIVER}.cpp
     ${CMAKE_CURRENT_LIST_DIR}/usb/${BLIT_USB_DRIVER}.cpp
 )
