@@ -9,7 +9,7 @@ extern blit::ScreenMode cur_screen_mode;
 
 extern bool fb_double_buffer;
 
-#if defined(BUILD_LOADER) || defined(BLIT_BOARD_PIMORONI_PICOVISION)
+#if defined(BUILD_LOADER) || defined(BLIT_BOARD_PIMORONI_PICOVISION) || defined(PSRAM_FRAMEBUFFER_SIZE)
 extern uint16_t *screen_fb;
 #else
 extern uint16_t screen_fb[];

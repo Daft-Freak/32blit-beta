@@ -3,6 +3,7 @@
 #include <cstring>
 
 #include "config.h"
+#include "psram.h"
 
 using namespace blit;
 
@@ -13,6 +14,10 @@ bool fb_double_buffer = true;
 #if defined(BUILD_LOADER) || defined(BLIT_BOARD_PIMORONI_PICOVISION)
 uint16_t *screen_fb = nullptr;
 static uint32_t max_fb_size = 0;
+static Size max_fb_bounds(DISPLAY_WIDTH, DISPLAY_HEIGHT);
+#elif defined(PSRAM_FRAMEBUFFER_SIZE)
+uint16_t *screen_fb = (uint16_t *)(PSRAM_LOCATION);
+static const uint32_t max_fb_size = PSRAM_FRAMEBUFFER_SIZE * sizeof(uint16_t);
 static Size max_fb_bounds(DISPLAY_WIDTH, DISPLAY_HEIGHT);
 #else
 uint16_t screen_fb[FRAMEBUFFER_SIZE];
