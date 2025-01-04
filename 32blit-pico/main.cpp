@@ -20,6 +20,7 @@
 #include "input.hpp"
 #include "led.hpp"
 #include "multiplayer.hpp"
+#include "psram.h"
 #include "storage.hpp"
 #include "usb.hpp"
 
@@ -290,6 +291,10 @@ int main() {
 
   init_usb();
   stdio_init_all();
+
+#ifdef PSRAM_CS_PIN
+  psram_init(PSRAM_CS_PIN);
+#endif
 
   init_i2c();
 
