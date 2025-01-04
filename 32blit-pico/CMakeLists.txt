@@ -56,6 +56,12 @@ target_link_libraries(BlitHalPico INTERFACE
     LauncherShared
 )
 
+if(32BLIT_PICO_2350)
+    target_sources(BlitHalPico INTERFACE
+        ${CMAKE_CURRENT_LIST_DIR}/psram.c
+    )
+endif()
+
 target_include_directories(BlitHalPico INTERFACE
     ${CMAKE_CURRENT_LIST_DIR} # for tusb_config
 )
