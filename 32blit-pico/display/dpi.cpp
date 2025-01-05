@@ -4,6 +4,8 @@
 #include "hardware/irq.h"
 #include "hardware/pio.h"
 #include "hardware/spi.h"
+#include "hardware/structs/xip.h"
+#include "hardware/xip_cache.h"
 #include "pico/binary_info.h"
 #include "pico/time.h"
 
@@ -97,6 +99,13 @@ static uint32_t active_line_timings[4];
 static uint32_t vblank_line_timings[4];
 static uint32_t vsync_line_timings[4];
 
+#ifdef PSRAM_FRAMEBUFFER_SIZE
+#define LINE_BUFFER_SIZE DPI_MODE_H_ACTIVE_PIXELS
+#define NUM_LINE_BUFFERS 4
+
+static uint16_t line_buffer[LINE_BUFFER_SIZE * NUM_LINE_BUFFERS];
+#endif
+
 // assumes data SM is idle
 static inline void update_h_repeat() {
   // update Y register
@@ -144,6 +153,18 @@ static void __not_in_flash_func(dma_irq_handler)() {
 
       need_mode_change = false;
     }
+
+#ifdef PSRAM_FRAMEBUFFER_SIZE
+    // prepare stream
+    // kinda hacky, but fifo has two entries max
+    xip_ctrl_hw->stream_ctr = 0;
+    xip_ctrl_hw->stream_fifo;
+    xip_ctrl_hw->stream_fifo;
+
+    xip_ctrl_hw->stream_addr = uintptr_t(cur_display_buffer);
+    xip_ctrl_hw->stream_ctr = (line_width * (DPI_MODE_V_ACTIVE_LINES / v_repeat)) / 2;
+#endif
+
   } else if(reconfigure_data_pio) {
     // this should be the point where the last line finished (in vblank) and we would start line 0, but we disabled it
     // reconfigure the PIO before re-enabling it
@@ -159,12 +180,25 @@ static void __not_in_flash_func(dma_irq_handler)() {
   }
 
   // setup next line DMA
-  int display_line = data_scanline / v_repeat;
+  uint display_line = data_scanline / v_repeat;
   auto w = line_width;
+
+#ifdef PSRAM_FRAMEBUFFER_SIZE
+  // DMA from buffer
+  auto fb_line_ptr = line_buffer + (display_line % NUM_LINE_BUFFERS) * w;
+
+  ch->read_addr = uintptr_t(fb_line_ptr);
+  ch->transfer_count = w / 2;
+
+  // chain to copy irq
+  if((data_scanline) % v_repeat == 0)
+    irq_set_pending(SPARE_IRQ_0);
+#else
   auto fb_line_ptr = reinterpret_cast<uint16_t *>(cur_display_buffer) + display_line * w;
 
   ch->read_addr = uintptr_t(fb_line_ptr);
   ch->transfer_count = w / 2;
+#endif
 
   data_scanline++;
 }
@@ -186,6 +220,30 @@ static void __not_in_flash_func(pio_timing_irq_handler)() {
     }
   }
 }
+
+#ifdef PSRAM_FRAMEBUFFER_SIZE
+static void __not_in_flash_func(copy_line_irq_handler)() {
+  if(!xip_ctrl_hw->stream_ctr)
+    return;
+
+  auto w = line_width;
+  uint32_t *next_line_ptr;
+
+  if(data_scanline == 1) { // first line, copy two
+    next_line_ptr = reinterpret_cast<uint32_t *>(line_buffer);
+  } else { // copy next
+    uint display_line = (data_scanline - 1) / v_repeat;
+    uint next_line = (display_line + 1);
+    next_line_ptr = reinterpret_cast<uint32_t *>(line_buffer) + (next_line % NUM_LINE_BUFFERS) * w / 2;
+    w /= 2; // 32-bit transfers
+  }
+
+  while(w--) {
+    while(xip_ctrl_hw->stat & XIP_STAT_FIFO_EMPTY_BITS);
+    *next_line_ptr++ = xip_ctrl_hw->stream_fifo;
+  }
+}
+#endif
 
 #ifdef DPI_SPI_INIT
 static void command(uint8_t reg, size_t len = 0, const char *data = nullptr) {
@@ -386,11 +444,23 @@ void init_display() {
   dma_hw->inte0 = (chan_mask << DPI_DMA_CH_BASE);
   irq_set_exclusive_handler(DMA_IRQ_0, dma_irq_handler);
   irq_set_enabled(DMA_IRQ_0, true);
+
+#ifdef PSRAM_FRAMEBUFFER_SIZE
+  irq_set_exclusive_handler(SPARE_IRQ_0, copy_line_irq_handler);
+  irq_set_priority(SPARE_IRQ_0, PICO_DEFAULT_IRQ_PRIORITY + 16);
+  irq_set_enabled(SPARE_IRQ_0, true);
+#endif
 }
 
 void update_display(uint32_t time) {
   if(do_render) {
     blit::render(time);
+
+#ifdef PSRAM_FRAMEBUFFER_SIZE
+    // flush if framebuffer in PSRAM
+    auto ptr = blit::screen.data;
+    xip_cache_clean_range(uintptr_t(ptr) - XIP_BASE, blit::screen.bounds.area() * blit::screen.pixel_stride);
+#endif
 
     // start dma/pio after first render
     if(!started && blit::screen.data) {
