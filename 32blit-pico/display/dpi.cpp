@@ -104,6 +104,7 @@ static uint32_t vsync_line_timings[4];
 #define NUM_LINE_BUFFERS 4
 
 static uint16_t line_buffer[LINE_BUFFER_SIZE * NUM_LINE_BUFFERS];
+static uint psram_dma_ch = 0;
 #endif
 
 // assumes data SM is idle
@@ -153,18 +154,6 @@ static void __not_in_flash_func(dma_irq_handler)() {
 
       need_mode_change = false;
     }
-
-#ifdef PSRAM_FRAMEBUFFER_SIZE
-    // prepare stream
-    // kinda hacky, but fifo has two entries max
-    xip_ctrl_hw->stream_ctr = 0;
-    xip_ctrl_hw->stream_fifo;
-    xip_ctrl_hw->stream_fifo;
-
-    xip_ctrl_hw->stream_addr = uintptr_t(cur_display_buffer);
-    xip_ctrl_hw->stream_ctr = (line_width * (DPI_MODE_V_ACTIVE_LINES / v_repeat)) / 2;
-#endif
-
   } else if(reconfigure_data_pio) {
     // this should be the point where the last line finished (in vblank) and we would start line 0, but we disabled it
     // reconfigure the PIO before re-enabling it
@@ -223,14 +212,26 @@ static void __not_in_flash_func(pio_timing_irq_handler)() {
 
 #ifdef PSRAM_FRAMEBUFFER_SIZE
 static void __not_in_flash_func(copy_line_irq_handler)() {
-  if(!xip_ctrl_hw->stream_ctr)
-    return;
+
+  auto dma_ch = &dma_hw->ch[psram_dma_ch];
 
   auto w = line_width;
   uint32_t *next_line_ptr;
 
-  if(data_scanline == 1) { // first line, copy two
+  if(data_scanline == 1) {
+    // first line (this is after the increment), prepare stream
+    // kinda hacky, but fifo has two entries max
+    xip_ctrl_hw->stream_ctr = 0;
+    xip_ctrl_hw->stream_fifo;
+    xip_ctrl_hw->stream_fifo;
+
+    xip_ctrl_hw->stream_addr = uintptr_t(cur_display_buffer);
+    xip_ctrl_hw->stream_ctr = (line_width * (DPI_MODE_V_ACTIVE_LINES / v_repeat)) / 2;
+
+    // copy two lines
     next_line_ptr = reinterpret_cast<uint32_t *>(line_buffer);
+  } else if(!xip_ctrl_hw->stream_ctr) {
+    return; // nothing left to do
   } else { // copy next
     uint display_line = (data_scanline - 1) / v_repeat;
     uint next_line = (display_line + 1);
@@ -238,10 +239,10 @@ static void __not_in_flash_func(copy_line_irq_handler)() {
     w /= 2; // 32-bit transfers
   }
 
-  while(w--) {
-    while(xip_ctrl_hw->stat & XIP_STAT_FIFO_EMPTY_BITS);
-    *next_line_ptr++ = xip_ctrl_hw->stream_fifo;
-  }
+  dma_ch->al1_write_addr = uintptr_t(next_line_ptr);
+  dma_ch->al1_transfer_count_trig = w;
+
+  while(dma_ch->al1_ctrl & DMA_CH0_CTRL_TRIG_BUSY_BITS);
 }
 #endif
 
@@ -446,9 +447,28 @@ void init_display() {
   irq_set_enabled(DMA_IRQ_0, true);
 
 #ifdef PSRAM_FRAMEBUFFER_SIZE
+  // setup low priority IRQ for line copy
   irq_set_exclusive_handler(SPARE_IRQ_0, copy_line_irq_handler);
   irq_set_priority(SPARE_IRQ_0, PICO_DEFAULT_IRQ_PRIORITY + 16);
   irq_set_enabled(SPARE_IRQ_0, true);
+
+  // setup another DMA channel to read from XIP stream
+  psram_dma_ch = dma_claim_unused_channel(true);
+
+  dma_channel_config c = dma_channel_get_default_config(psram_dma_ch);
+  channel_config_set_read_increment(&c, false);
+  channel_config_set_write_increment(&c, true);
+  channel_config_set_dreq(&c, DREQ_XIP_STREAM);
+
+  dma_channel_configure(
+    psram_dma_ch,
+    &c,
+    line_buffer,
+    (const void *) XIP_AUX_BASE,
+    DPI_MODE_H_ACTIVE_PIXELS, // set correct len later
+    false
+  );
+
 #endif
 }
 
