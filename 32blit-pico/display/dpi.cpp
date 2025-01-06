@@ -322,6 +322,23 @@ static void init_display_spi() {
 #endif
 }
 
+static void setup_irqs() {
+  // setup PIO IRQ
+  irq_set_exclusive_handler(pio_get_irq_num(pio, 0), pio_timing_irq_handler);
+  irq_set_enabled(pio_get_irq_num(pio, 0), true);
+
+  // DMA (line data)
+  irq_set_exclusive_handler(DMA_IRQ_0, dma_irq_handler);
+  irq_set_enabled(DMA_IRQ_0, true);
+
+#ifdef PSRAM_FRAMEBUFFER_SIZE
+  // setup low priority IRQ for line copy
+  irq_set_exclusive_handler(SPARE_IRQ_0, copy_line_irq_handler);
+  irq_set_priority(SPARE_IRQ_0, PICO_DEFAULT_IRQ_PRIORITY + 16);
+  irq_set_enabled(SPARE_IRQ_0, true);
+#endif
+}
+
 void init_display() {
   // send init commands if needed
   init_display_spi();
@@ -412,11 +429,8 @@ void init_display() {
 
   bi_decl_if_func_used(bi_1pin_with_name(DPI_CLOCK_PIN, "Display Clock"));
 #endif
-
-  // setup PIO IRQ
+  // enable PIO IRQ for timing SM
   pio_set_irq0_source_enabled(pio, pio_interrupt_source_t(pis_sm0_tx_fifo_not_full + timing_sm), true);
-  irq_set_exclusive_handler(pio_get_irq_num(pio, 0), pio_timing_irq_handler);
-  irq_set_enabled(pio_get_irq_num(pio, 0), true);
 
   // setup data DMA
   // chain channels in a loop
@@ -444,15 +458,9 @@ void init_display() {
 
   dma_hw->ints0 = (chan_mask << DPI_DMA_CH_BASE);
   dma_hw->inte0 = (chan_mask << DPI_DMA_CH_BASE);
-  irq_set_exclusive_handler(DMA_IRQ_0, dma_irq_handler);
-  irq_set_enabled(DMA_IRQ_0, true);
+
 
 #ifdef PSRAM_FRAMEBUFFER_SIZE
-  // setup low priority IRQ for line copy
-  irq_set_exclusive_handler(SPARE_IRQ_0, copy_line_irq_handler);
-  irq_set_priority(SPARE_IRQ_0, PICO_DEFAULT_IRQ_PRIORITY + 16);
-  irq_set_enabled(SPARE_IRQ_0, true);
-
   // setup another DMA channel to read from XIP stream
   psram_dma_ch = dma_claim_unused_channel(true);
 
@@ -471,6 +479,8 @@ void init_display() {
   );
 
 #endif
+
+  setup_irqs();
 }
 
 void update_display(uint32_t time) {
