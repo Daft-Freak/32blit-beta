@@ -228,13 +228,14 @@ static void __not_in_flash_func(copy_line_irq_handler)() {
     xip_ctrl_hw->stream_addr = uintptr_t(cur_display_buffer);
     xip_ctrl_hw->stream_ctr = (line_width * (DPI_MODE_V_ACTIVE_LINES / v_repeat)) / 2;
 
-    // copy two lines
+    // copy three lines
     next_line_ptr = reinterpret_cast<uint32_t *>(line_buffer);
+    w += w / 2;
   } else if(!xip_ctrl_hw->stream_ctr) {
     return; // nothing left to do
   } else { // copy next
     uint display_line = (data_scanline - 1) / v_repeat;
-    uint next_line = (display_line + 1);
+    uint next_line = (display_line + 2);
     next_line_ptr = reinterpret_cast<uint32_t *>(line_buffer) + (next_line % NUM_LINE_BUFFERS) * w / 2;
     w /= 2; // 32-bit transfers
   }
