@@ -66,13 +66,31 @@ void update_input() {
     raw_buttons |= (data[1] & 0xF0) << 4 | (data[3] & 0xF0) << 8;
 #endif
 
+  // process raw data
+  static const int joystick_range = 1408; //1280
+  static const int joystick_deadzone = 128;
+  auto scale_joystick = [](uint16_t raw) {
+    int val = raw - 0x800;
+
+    val = std::min(std::max(val, -joystick_range), joystick_range);
+
+    if(val > joystick_deadzone)
+      val -= joystick_deadzone;
+    else if(val < -joystick_deadzone)
+      val += joystick_deadzone;
+    else
+      val = 0;
+
+    return float(val) / (joystick_range - joystick_deadzone);
+  };
+
 #ifdef ROTATE_STICK
-  // this looks like the rotated one, but we're assuming horizontal layout by default...
-  blit::api_data.joystick.x =  float(raw_adc[0] - 0x7FF) / 2047.0f;
-  blit::api_data.joystick.y =  float(raw_adc[1] - 0x7FF) / 2047.0f;
+  // this looks like the non-rotated one, but we're assuming horizontal layout by default...
+  blit::api_data.joystick.x =  scale_joystick(raw_adc[0]);
+  blit::api_data.joystick.y =  scale_joystick(raw_adc[1]);
 #else
-  blit::api_data.joystick.x =  float(raw_adc[1] - 0x7FF) / 2047.0f;
-  blit::api_data.joystick.y = -float(raw_adc[0] - 0x7FF) / 2047.0f;
+  blit::api_data.joystick.x =  scale_joystick(raw_adc[1]);
+  blit::api_data.joystick.y = -scale_joystick(raw_adc[0]);
 #endif
 
   uint32_t new_buttons = 0;
