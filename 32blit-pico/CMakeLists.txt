@@ -368,4 +368,8 @@ function(blit_metadata TARGET FILE)
 
 endfunction()
 
-add_subdirectory(loader)
+# use this as an indicator that we're building the SDK
+# (until we have a proper split to not build the loader in an out-of-tree build)
+if(${PROJECT_NAME} STREQUAL "32blit")
+    add_subdirectory(loader)
+endif()
