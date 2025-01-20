@@ -20,7 +20,7 @@ add_subdirectory(utilities)
 if(32BLIT_HW)
     add_subdirectory(32blit-stm32)
     add_subdirectory(32blit-stm32/firmware)
-    add_subdirectory(firmware-update)
+    add_subdirectory(32blit-stm32/firmware-update)
 endif()
 
 add_subdirectory(launcher)
