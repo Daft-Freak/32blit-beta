@@ -360,6 +360,7 @@ void blit_init() {
 
   fs_mounted = f_mount(&filesystem, "", 1) == FR_OK;  // this shouldn't be necessary here right?
 
+  api_data.sensors = nullptr;
   i2c::init();
 
   // bit of a hack, but we know it's writable
