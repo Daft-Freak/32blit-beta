@@ -35,4 +35,19 @@ namespace blit {
   };
 
   extern bool pressed(uint32_t button);
+
+  enum class SensorType : uint8_t {
+    ACCELEROMETER
+  };
+
+  struct Sensor {
+    Sensor(SensorType type);
+
+    bool is_present() const;
+
+    Vec3 get_vec3() const;
+
+  private:
+    void *data;
+  };
 }
