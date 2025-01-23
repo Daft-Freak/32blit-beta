@@ -11,6 +11,8 @@
 
 static bool lsm6ds3_present = true;
 
+static blit::SensorDataVec3 accel_data = {nullptr, blit::SensorType::ACCELEROMETER, {}};
+
 enum LSM6DS3Reg {
   CTRL1_XL = 0x10,
 
@@ -28,8 +30,14 @@ void init_sensor() {
   uint8_t data[2];
   data[0] = CTRL1_XL;
   data[1] = 4 << 4; // 104Hz normal mode
-  if(i2c_write_blocking(i2c0, LSM6DS3_ADDR, data, 2, false) == PICO_ERROR_GENERIC)
+  if(i2c_write_blocking(i2c0, LSM6DS3_ADDR, data, 2, false) == PICO_ERROR_GENERIC) {
     lsm6ds3_present = false;
+    return;
+  }
+
+  // insert helper?
+  accel_data.next = blit::api_data.sensors;
+  blit::api_data.sensors = &accel_data;
 }
 
 void update_sensor(uint32_t time) {
@@ -50,6 +58,7 @@ void update_sensor(uint32_t time) {
 
     blit::Vec3 new_tilt(-data[1], -data[0], data[2]);
     new_tilt.normalize();
-    blit::api_data.tilt = new_tilt;
+
+    accel_data.data = new_tilt;
   }
 }
