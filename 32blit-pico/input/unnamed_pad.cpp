@@ -67,12 +67,10 @@ void update_input() {
 #endif
 
   // process raw data
-  static const int joystick_range = 1408; //1280
-  static const int joystick_deadzone = 128;
+  static const int joystick_range = 2048; // full
+  static const int joystick_deadzone = 192;
   auto scale_joystick = [](uint16_t raw) {
     int val = raw - 0x800;
-
-    val = std::min(std::max(val, -joystick_range), joystick_range);
 
     if(val > joystick_deadzone)
       val -= joystick_deadzone;
