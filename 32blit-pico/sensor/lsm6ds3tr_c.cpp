@@ -9,6 +9,8 @@
 #define LSM6DS3_ADDR 0x6A
 #endif
 
+static bool lsm6ds3_present = true;
+
 enum LSM6DS3Reg {
   CTRL1_XL = 0x10,
 
@@ -26,10 +28,14 @@ void init_sensor() {
   uint8_t data[2];
   data[0] = CTRL1_XL;
   data[1] = 4 << 4; // 104Hz normal mode
-  i2c_write_blocking(i2c0, LSM6DS3_ADDR, data, 2, false);
+  if(i2c_write_blocking(i2c0, LSM6DS3_ADDR, data, 2, false) == PICO_ERROR_GENERIC)
+    lsm6ds3_present = false;
 }
 
 void update_sensor(uint32_t time) {
+  if(!lsm6ds3_present)
+    return;
+
   uint8_t status;
   int16_t data[3];
 
