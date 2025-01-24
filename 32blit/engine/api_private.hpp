@@ -202,4 +202,9 @@ namespace blit {
 
   extern const APIConst &api;
   extern APIData &api_data;
+
+  inline void insert_api_sensor_data(SensorData *sensor) {
+    sensor->next = blit::api_data.sensors;
+    api_data.sensors = sensor;
+  }
 }
