@@ -17,6 +17,9 @@ namespace blit {
     return buttons.state & button;
   }
 
+  Sensor::Sensor() : data (nullptr){
+  }
+
   Sensor::Sensor(SensorType type) : data(nullptr) {
     for(auto sensor = api_data.sensors; sensor; sensor = sensor->next) {
       if(sensor->type == type)
