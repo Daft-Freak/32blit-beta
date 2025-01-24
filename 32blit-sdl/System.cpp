@@ -358,6 +358,7 @@ bool System::loop() {
   blit::tilt.x = shadow_tilt[0];
   blit::tilt.y = shadow_tilt[1];
   blit::tilt.z = shadow_tilt[2];
+  blit::tilt.normalize();
   accel_data.data = blit::tilt;
 
   blit::joystick.x = shadow_joystick[0];
