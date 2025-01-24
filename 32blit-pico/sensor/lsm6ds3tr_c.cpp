@@ -3,6 +3,7 @@
 
 #include "hardware/i2c.h"
 
+#include "math/constants.hpp"
 #include "engine/api_private.hpp"
 
 #ifndef LSM6DS3_ADDR
@@ -12,11 +13,20 @@
 static bool lsm6ds3_present = true;
 
 static blit::SensorDataVec3 accel_data = {nullptr, blit::SensorType::ACCELEROMETER, {}};
+static blit::SensorDataVec3 gyro_data = {nullptr, blit::SensorType::GYROSCOPE, {}};
 
 enum LSM6DS3Reg {
   CTRL1_XL = 0x10,
+  CTRL2_G,
 
   STATUS_REG = 0x1E,
+
+  OUTX_L_G = 0x22,
+  OUTX_H_G,
+  OUTY_L_G,
+  OUTY_H_G,
+  OUTZ_L_G,
+  OUTZ_H_G,
 
   OUTX_L_XL = 0x28,
   OUTX_H_XL,
@@ -27,6 +37,7 @@ enum LSM6DS3Reg {
 };
 
 void init_sensor() {
+  // init accelerometer
   uint8_t data[2];
   data[0] = CTRL1_XL;
   data[1] = 4 << 4; // 104Hz normal mode
@@ -35,7 +46,12 @@ void init_sensor() {
     return;
   }
 
+  // init gyroscope
+  data[0] = CTRL2_G;
+  i2c_write_blocking(i2c0, LSM6DS3_ADDR, data, 2, false);
+
   blit::insert_api_sensor_data(&accel_data);
+  blit::insert_api_sensor_data(&gyro_data);
 }
 
 void update_sensor(uint32_t time) {
@@ -58,5 +74,17 @@ void update_sensor(uint32_t time) {
     new_tilt.normalize();
 
     accel_data.data = new_tilt;
+  }
+
+  if(status & 2) { // GDA (new gyro data)
+    reg = OUTX_L_G;
+    i2c_write_blocking(i2c0, LSM6DS3_ADDR, &reg, 1, true);
+    i2c_read_blocking(i2c0, LSM6DS3_ADDR, (uint8_t *)&data, 6, false);
+
+    blit::Vec3 new_gyro(-data[1], -data[0], data[2]);
+    // apply scale and convert to rad/s
+    new_gyro *= (245.0f/*dps*/ / 32768) * (blit::pi / 180.0f);
+
+    gyro_data.data = new_gyro;
   }
 }
