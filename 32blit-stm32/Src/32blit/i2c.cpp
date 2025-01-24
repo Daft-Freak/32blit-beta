@@ -50,6 +50,8 @@ static RunningAverage<int16_t> accel_x(8);
 static RunningAverage<int16_t> accel_y(8);
 static RunningAverage<int16_t> accel_z(8);
 
+static blit::SensorDataVec3 accel_data = {nullptr, blit::SensorType::ACCELEROMETER, {}};
+
 static I2CState i2c_state = SEND_ACL;
 static uint8_t i2c_buffer[6] = {0};
 static uint8_t i2c_reg = 0;
@@ -86,6 +88,8 @@ namespace i2c {
 
     // init battery management
     bq24295_init(&hi2c4);
+
+    blit::insert_api_sensor_data(&accel_data);
   }
 
   //
@@ -133,6 +137,7 @@ namespace i2c {
         );
 
         blit::tilt.normalize();
+        accel_data.data = blit::tilt;
 
         i2c_state = SEND_BAT_STAT;
         break;
