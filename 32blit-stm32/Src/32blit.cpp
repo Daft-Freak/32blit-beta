@@ -421,6 +421,8 @@ void blit_init() {
   api.cdc_write = cdc_write;
   api.cdc_read = cdc_read;
 
+  api_data.sensors = nullptr;
+
   display::init();
 
   multiplayer::init();
