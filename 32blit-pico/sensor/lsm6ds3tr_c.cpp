@@ -35,9 +35,7 @@ void init_sensor() {
     return;
   }
 
-  // insert helper?
-  accel_data.next = blit::api_data.sensors;
-  blit::api_data.sensors = &accel_data;
+  blit::insert_api_sensor_data(&accel_data);
 }
 
 void update_sensor(uint32_t time) {
