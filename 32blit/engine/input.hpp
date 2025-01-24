@@ -41,6 +41,7 @@ namespace blit {
   };
 
   struct Sensor {
+    Sensor();
     Sensor(SensorType type);
 
     bool is_present() const;
