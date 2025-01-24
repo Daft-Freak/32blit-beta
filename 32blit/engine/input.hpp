@@ -37,7 +37,14 @@ namespace blit {
   extern bool pressed(uint32_t button);
 
   enum class SensorType : uint8_t {
-    ACCELEROMETER
+    ACCELEROMETER,
+    GYROSCOPE,
+    TEMPERATURE,
+    PRESSURE,
+    HUMIDITY,
+    LIGHT,
+    PROXIMITY,
+    BATTERY_VOLTAGE,
   };
 
   struct Sensor {
