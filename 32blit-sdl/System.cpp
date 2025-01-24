@@ -25,6 +25,8 @@ int System::height = System::max_height;
 static uint8_t framebuffer[System::max_width * System::max_height * 3];
 static blit::Pen palette[256];
 
+static blit::SensorDataVec3 accel_data = {nullptr, blit::SensorType::ACCELEROMETER, {}};
+
 // blit debug callback
 void blit_debug(const char *message) {
 	std::cout << message;
@@ -283,6 +285,8 @@ void System::run() {
 
 	start = std::chrono::steady_clock::now();
 
+  blit::insert_api_sensor_data(&accel_data);
+
 	blit::update = ::update;
 	blit::render = ::render;
 
@@ -350,9 +354,12 @@ int System::update_thread() {
 bool System::loop() {
   SDL_LockMutex(m_input);
   blit::buttons = shadow_buttons;
+
   blit::tilt.x = shadow_tilt[0];
   blit::tilt.y = shadow_tilt[1];
   blit::tilt.z = shadow_tilt[2];
+  accel_data.data = blit::tilt;
+
   blit::joystick.x = shadow_joystick[0];
   blit::joystick.y = shadow_joystick[1];
   SDL_UnlockMutex(m_input);
