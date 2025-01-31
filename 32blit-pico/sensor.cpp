@@ -2,11 +2,15 @@
 
 #include "sensor.hpp"
 
+extern SensorDriver bme280_driver;
 extern SensorDriver lsm6ds3tr_c_driver;
 
 static SensorDriver *sensor_drivers[] {
+#ifdef BLIT_SENSOR_BME280
+  &bme280_driver,
+#endif
 #ifdef BLIT_SENSOR_LSM6DS3TR_C
-  &lsm6ds3tr_c_driver
+  &lsm6ds3tr_c_driver,
 #endif
 };
 static constexpr unsigned num_sensor_drivers = sizeof(sensor_drivers) / sizeof(sensor_drivers[0]);

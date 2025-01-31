@@ -38,7 +38,10 @@ namespace blit {
 
   enum class SensorType : uint8_t {
     ACCELEROMETER,
-    GYROSCOPE
+    GYROSCOPE,
+    TEMPERATURE,
+    PRESSURE,
+    HUMIDITY,
   };
 
   enum class SensorDataType : uint8_t {
