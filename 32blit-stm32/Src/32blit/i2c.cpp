@@ -50,7 +50,7 @@ static RunningAverage<float> accel_x(8);
 static RunningAverage<float> accel_y(8);
 static RunningAverage<float> accel_z(8);
 
-static blit::SensorDataVec3 accel_data = {nullptr, blit::SensorType::ACCELEROMETER, {}};
+static blit::SensorDataVec3 accel_data(blit::SensorType::ACCELEROMETER);
 
 static I2CState i2c_state = SEND_ACL;
 static uint8_t i2c_buffer[6] = {0};
