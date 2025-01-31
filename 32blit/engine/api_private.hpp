@@ -71,9 +71,11 @@ namespace blit {
   struct SensorData {
     SensorData *next;
     SensorType type;
+    SensorDataType data_type;
   };
 
   struct SensorDataVec3 : public SensorData {
+    SensorDataVec3(SensorType type) : SensorData{nullptr, type, SensorDataType::VEC3} {}
     Vec3 data;
   };
 
