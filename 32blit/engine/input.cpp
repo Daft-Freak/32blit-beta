@@ -31,6 +31,18 @@ namespace blit {
     return data != nullptr;
   }
 
+  float Sensor::get_float() const {
+    if(!is_present())
+      return {};
+
+    auto float_data = (SensorDataFloat *)data;
+
+    if(float_data->data_type != SensorDataType::FLOAT)
+      return {};
+
+    return float_data->data;
+  }
+
   Vec3 Sensor::get_vec3() const {
     if(!is_present())
       return {};
