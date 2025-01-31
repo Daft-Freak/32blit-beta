@@ -36,7 +36,7 @@ enum LSM6DS3Reg {
   OUTZ_H_XL,
 };
 
-void init_sensor() {
+static void init_lsm6ds3() {
   // init accelerometer
   uint8_t data[2];
   data[0] = CTRL1_XL;
@@ -54,7 +54,7 @@ void init_sensor() {
   blit::insert_api_sensor_data(&gyro_data);
 }
 
-void update_sensor(uint32_t time) {
+static void update_lsm6ds3(uint32_t time) {
   if(!lsm6ds3_present)
     return;
 
@@ -88,3 +88,7 @@ void update_sensor(uint32_t time) {
     gyro_data.data = new_gyro;
   }
 }
+
+SensorDriver lsm6ds3tr_c_driver {
+  init_lsm6ds3, update_lsm6ds3
+};
