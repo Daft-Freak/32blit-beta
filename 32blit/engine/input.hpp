@@ -47,6 +47,10 @@ namespace blit {
     BATTERY_VOLTAGE,
   };
 
+  enum class SensorDataType : uint8_t {
+    VEC3,
+  };
+
   struct Sensor {
     Sensor();
     Sensor(SensorType type);

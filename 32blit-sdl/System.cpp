@@ -25,7 +25,7 @@ int System::height = System::max_height;
 static uint8_t framebuffer[System::max_width * System::max_height * 3];
 static blit::Pen palette[256];
 
-static blit::SensorDataVec3 accel_data = {nullptr, blit::SensorType::ACCELEROMETER, {}};
+static blit::SensorDataVec3 accel_data(blit::SensorType::ACCELEROMETER);
 
 // blit debug callback
 void blit_debug(const char *message) {
