@@ -35,8 +35,11 @@ namespace blit {
     if(!is_present())
       return {};
 
-    // check expected data type?
+    auto vec3_data = (SensorDataVec3 *)data;
 
-    return ((SensorDataVec3 *)data)->data;
+    if(vec3_data->data_type != SensorDataType::VEC3)
+      return {};
+
+    return vec3_data->data;
   }
 }

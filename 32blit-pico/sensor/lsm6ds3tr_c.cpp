@@ -12,8 +12,8 @@
 
 static bool lsm6ds3_present = true;
 
-static blit::SensorDataVec3 accel_data = {nullptr, blit::SensorType::ACCELEROMETER, {}};
-static blit::SensorDataVec3 gyro_data = {nullptr, blit::SensorType::GYROSCOPE, {}};
+static blit::SensorDataVec3 accel_data(blit::SensorType::ACCELEROMETER);
+static blit::SensorDataVec3 gyro_data(blit::SensorType::GYROSCOPE);
 
 enum LSM6DS3Reg {
   CTRL1_XL = 0x10,
