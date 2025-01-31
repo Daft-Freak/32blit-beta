@@ -303,7 +303,7 @@ int main() {
   init_led();
   init_display();
   init_input();
-  init_sensor();
+  init_sensors();
   init_fs();
 #if !defined(ENABLE_CORE1)
   init_audio();
@@ -339,7 +339,7 @@ int main() {
 
     update_input();
     check_home_button();
-    update_sensor(now);
+    update_sensors(now);
 
     int ms_to_next_update = do_tick(::now());
 
