@@ -48,6 +48,7 @@ namespace blit {
   };
 
   enum class SensorDataType : uint8_t {
+    FLOAT,
     VEC3,
   };
 
@@ -57,6 +58,7 @@ namespace blit {
 
     bool is_present() const;
 
+    float get_float() const;
     Vec3 get_vec3() const;
 
   private:
