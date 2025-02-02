@@ -42,6 +42,8 @@ namespace blit {
     TEMPERATURE,
     PRESSURE,
     HUMIDITY,
+    LIGHT,
+    PROXIMITY,
   };
 
   enum class SensorDataType : uint8_t {
