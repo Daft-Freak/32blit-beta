@@ -1,4 +1,4 @@
-// LSM6DS3TR-C accelerometer + gyroscope
+// BME280 temperature + pressure + humidity
 #include "sensor.hpp"
 
 #include "hardware/i2c.h"
