@@ -360,6 +360,7 @@ void blit_init() {
 
   fs_mounted = f_mount(&filesystem, "", 1) == FR_OK;  // this shouldn't be necessary here right?
 
+  api_data.sensors = nullptr;
   i2c::init();
 
   // bit of a hack, but we know it's writable
@@ -420,8 +421,6 @@ void blit_init() {
   api.set_raw_cdc_enabled = set_raw_cdc_enabled;
   api.cdc_write = cdc_write;
   api.cdc_read = cdc_read;
-
-  api_data.sensors = nullptr;
 
   display::init();
 
