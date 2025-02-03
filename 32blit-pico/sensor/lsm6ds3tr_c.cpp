@@ -18,6 +18,14 @@ static blit::SensorDataVec3 gyro_data(blit::SensorType::GYROSCOPE);
 enum LSM6DS3Reg {
   CTRL1_XL = 0x10,
   CTRL2_G,
+  CTRL3_C,
+  CTRL4_C,
+  CTRL5_C,
+  CTRL6_C,
+  CTRL7_G,
+  CTRL8_XL,
+  CTRL9_XL,
+  CTRL10_C,
 
   STATUS_REG = 0x1E,
 
@@ -45,6 +53,10 @@ static void init_lsm6ds3() {
     lsm6ds3_present = false;
     return;
   }
+
+  data[0] = CTRL8_XL;
+  data[1] = (1 << 7) | (2 << 6); // LPF2 en, / 9
+  i2c_write_blocking(i2c0, LSM6DS3_ADDR, data, 2, false);
 
   // init gyroscope
   data[0] = CTRL2_G;
