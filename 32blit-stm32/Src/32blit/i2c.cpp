@@ -134,10 +134,10 @@ namespace i2c {
           -accel_x.average() >> 2,
           -accel_y.average() >> 2,
           -accel_z.average() >> 2
-        );
+        ) / (float(1 << 13) / 2.0f / 9.8f);
 
-        blit::tilt.normalize();
         accel_data.data = blit::tilt;
+        blit::tilt.normalize();
 
         i2c_state = SEND_BAT_STAT;
         break;

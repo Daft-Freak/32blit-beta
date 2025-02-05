@@ -83,7 +83,7 @@ static void update_lsm6ds3(uint32_t time) {
     i2c_read_blocking(i2c0, LSM6DS3_ADDR, (uint8_t *)&data, 6, false);
 
     blit::Vec3 new_tilt(-data[1], -data[0], data[2]);
-    new_tilt.normalize();
+    new_tilt /= (32768.0f / 2.0f/*scale*/ / 9.8f);
 
     accel_data.data = new_tilt;
   }
