@@ -12,6 +12,10 @@
 #define LTR_559ALS_ADDR 0x23
 #endif
 
+#ifndef LTR_559ALS_COMPENSATION
+#define LTR_559ALS_COMPENSATION 1.0f
+#endif
+
 static bool ltr_559_present = true;
 
 static blit::SensorDataFloat light_data(blit::SensorType::LIGHT);
@@ -95,7 +99,7 @@ static void update_ltr_559(uint32_t time) {
     else if(ratio < 0.85f)
       lux = (0.5926f * ch0 + 0.1185f * ch1) / gain / int_time;
 
-    // TODO: compensation for window/aperture?
+    lux /= LTR_559ALS_COMPENSATION;
 
     light_data.data = lux;
   }
