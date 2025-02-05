@@ -3,6 +3,8 @@
 
 #include "hardware/i2c.h"
 
+#include "config.h"
+
 #include "math/constants.hpp"
 #include "engine/api_private.hpp"
 
