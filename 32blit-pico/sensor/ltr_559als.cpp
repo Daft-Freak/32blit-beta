@@ -35,7 +35,7 @@ static void init_ltr_559() {
   // init
   uint8_t data[7];
   data[0] = ALS_CONTR;
-  data[1] = 1; // active
+  data[1] = (2/*4x gain*/ << 2) | 1 /*active*/;
   if(i2c_write_blocking(i2c0, LTR_559ALS_ADDR, data, 2, false) == PICO_ERROR_GENERIC) {
     ltr_559_present = false;
     return;
@@ -82,7 +82,7 @@ static void update_ltr_559(uint32_t time) {
     auto ch1 = raw_data[0], ch0 = raw_data[1];
     float ratio = float(ch1) / (ch0 + ch1);
 
-    const float gain = 1.0f;
+    const float gain = 4.0f;
     const float int_time = 100 / 100.0f;
     float lux = 0.0f;
 
