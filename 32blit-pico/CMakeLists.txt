@@ -221,6 +221,9 @@ endif()
 set(STARTUP_SRC ${CMAKE_CURRENT_LIST_DIR}/startup.S ${CMAKE_CURRENT_LIST_DIR}/startup.cpp PARENT_SCOPE)
 set(LAUNCHERSHARED_DIR ${CMAKE_CURRENT_LIST_DIR}/../launcher-shared PARENT_SCOPE)
 
+# for enabling stdio_usb
+set(BLIT_USB_DRIVER ${BLIT_USB_DRIVER} PARENT_SCOPE)
+
 # functions
 function(blit_executable NAME)
     message(STATUS "Processing ${NAME}")
@@ -230,7 +233,9 @@ function(blit_executable NAME)
     target_link_libraries(${NAME} BlitEngine pico_platform_headers)
 
     pico_enable_stdio_uart(${NAME} 1)
-    pico_enable_stdio_usb(${NAME} 0)
+    if(NOT BLIT_USB_DRIVER STREQUAL "host")
+        pico_enable_stdio_usb(${NAME} 1)
+    endif()
 
     if(PICO_STANDALONE_UF2)
         # standalone .uf2
