@@ -1,3 +1,14 @@
+# driver helper
+# can override driver choice by pre-setting BLIT_x_DRIVER
+function(blit_driver DRV NAME)
+    set(var BLIT_${DRV}_DRIVER)
+    string(TOUPPER ${var} var)
+
+    if(NOT ${var})
+        set(${var} ${NAME} PARENT_SCOPE)
+    endif()
+endfunction()
+
 if(DEFINED PICO_ADDON)
     # for boards that don't have a board in the pico sdk
     # (usually because they are an add-on for a regular pico)
