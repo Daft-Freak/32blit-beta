@@ -23,7 +23,7 @@ include(${CMAKE_CURRENT_LIST_DIR}/board-config.cmake)
 # late SDK init
 # (pico_sdk_init needs to be after importing extras, which we don't know if we'll need until now)
 if(BLIT_REQUIRE_PICO_EXTRAS)
-    include(pico_extras_import.cmake)
+    include(${CMAKE_CURRENT_LIST_DIR}/pico_extras_import.cmake)
 endif()
 
 pico_sdk_init()
