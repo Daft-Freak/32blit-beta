@@ -26,16 +26,6 @@ target_compile_options(BlitEngine PRIVATE -ffunction-sections -fdata-sections)
 
 add_subdirectory(../32blit-shared ../32blit-shared)
 
-# driver helper
-# can override driver choice by pre-setting BLIT_x_DRIVER
-function(blit_driver DRV NAME)
-    set(var BLIT_${DRV}_DRIVER)
-    string(TOUPPER ${var} var)
-
-    if(NOT ${var})
-        set(${var} ${NAME} PARENT_SCOPE)
-    endif()
-endfunction()
 
 add_library(BlitHalPico INTERFACE)
 target_sources(BlitHalPico INTERFACE
