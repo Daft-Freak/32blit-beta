@@ -45,6 +45,7 @@ target_sources(BlitHalPico INTERFACE
     ${CMAKE_CURRENT_LIST_DIR}/led.cpp
     ${CMAKE_CURRENT_LIST_DIR}/main.cpp
     ${CMAKE_CURRENT_LIST_DIR}/multiplayer.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/overlay.cpp
     ${CMAKE_CURRENT_LIST_DIR}/usb.cpp
     ${CMAKE_CURRENT_LIST_DIR}/usb_descriptors.c
 )
@@ -212,7 +213,7 @@ function(blit_executable NAME)
 
         pico_add_extra_outputs(${NAME})
 
-        install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${NAME}.uf2 
+        install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${NAME}.uf2
             DESTINATION bin
         )
     elseif(PICO_BLIT)
