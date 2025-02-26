@@ -198,15 +198,15 @@ function(blit_executable NAME)
     add_executable(${NAME} ${SOURCES})
     target_link_libraries(${NAME} BlitEngine pico_platform_headers)
 
-    pico_enable_stdio_uart(${NAME} 1)
-    pico_enable_stdio_usb(${NAME} 0)
-
     if(PICO_STANDALONE_UF2)
         # standalone .uf2
         # TODO: import pico hal if standalone build
         if(NOT TARGET LauncherShared)
             add_subdirectory(${LAUNCHERSHARED_DIR} launcher-shared)
         endif()
+
+        pico_enable_stdio_uart(${NAME} 1)
+        pico_enable_stdio_usb(${NAME} 0)
 
         target_compile_definitions(${NAME} PRIVATE BLIT_PICO_STANDALONE=1 PICO_EMBED_XIP_SETUP=1)
         target_link_libraries(${NAME} BlitHalPico)
