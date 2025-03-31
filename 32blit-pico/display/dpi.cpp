@@ -251,11 +251,11 @@ static void __not_in_flash_func(copy_line_irq_handler)() {
 static void command(uint8_t reg, size_t len = 0, const char *data = nullptr) {
   gpio_put(LCD_CS_PIN, 0);
   gpio_put(LCD_DC_PIN, 0); // command
-  spi_write_blocking(spi0, &reg, 1);
+  spi_write_blocking(DPI_SPI_INIT, &reg, 1);
 
   if(data) {
     gpio_put(LCD_DC_PIN, 1); // data
-    spi_write_blocking(spi0, (const uint8_t *)data, len);
+    spi_write_blocking(DPI_SPI_INIT, (const uint8_t *)data, len);
   }
 
   gpio_put(LCD_CS_PIN, 1);
@@ -264,7 +264,7 @@ static void command(uint8_t reg, size_t len = 0, const char *data = nullptr) {
 
 static void init_display_spi() {
 #ifdef DPI_SPI_INIT
-  spi_init(spi0, 1 * 1000 * 1000);
+  spi_init(DPI_SPI_INIT, 1 * 1000 * 1000);
   gpio_set_function(LCD_SCK_PIN, GPIO_FUNC_SPI);
   gpio_set_function(LCD_MOSI_PIN, GPIO_FUNC_SPI);
 
