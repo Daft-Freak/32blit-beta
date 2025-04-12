@@ -16,6 +16,7 @@
 #define BUFFER_SIZE 512
 
 static unsigned int audio_pwm_slice;
+static const int dma_irq = 1; // we usually use DMA_IRQ_0 for display stuff
 static unsigned int dma_channel;
 
 static uint16_t buffer_data[BUFFER_SIZE * 2];
@@ -23,8 +24,8 @@ static volatile bool need_refill = true;
 static volatile uint16_t *dma_buffer = nullptr, *refill_buffer = buffer_data;
 
 static void dma_irq_handler() {
-  if(dma_channel_get_irq0_status(dma_channel)) {
-    dma_channel_acknowledge_irq0(dma_channel);
+  if(dma_irqn_get_channel_status(dma_irq, dma_channel)) {
+    dma_irqn_acknowledge_channel(dma_irq, dma_channel);
 
     if(!need_refill) {
       std::swap(dma_buffer, refill_buffer);
@@ -55,9 +56,10 @@ void init_audio() {
   channel_config_set_transfer_data_size(&config, DMA_SIZE_16);
   channel_config_set_dreq(&config, DREQ_PWM_WRAP0 + audio_pwm_slice);
 
-  dma_channel_set_irq0_enabled(dma_channel, true);
-  irq_add_shared_handler(DMA_IRQ_0, dma_irq_handler, PICO_SHARED_IRQ_HANDLER_DEFAULT_ORDER_PRIORITY + 1);
-  irq_set_enabled(DMA_IRQ_0, true);
+  // enable irq
+  dma_irqn_set_channel_enabled(dma_irq, dma_channel, true);
+  irq_add_shared_handler(DMA_IRQ_0 + dma_irq, dma_irq_handler, PICO_SHARED_IRQ_HANDLER_DEFAULT_ORDER_PRIORITY);
+  irq_set_enabled(DMA_IRQ_0 + dma_irq, true);
 
   dma_channel_configure(dma_channel, &config, &pwm_hw->slice[audio_pwm_slice].cc, nullptr, BUFFER_SIZE, false);
 }
