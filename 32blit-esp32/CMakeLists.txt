@@ -6,6 +6,10 @@ idf_build_process(${ESP_TARGET})
 # grab some internal vars for later
 # (components/esptool_py/project_include.cmake)
 set(ELF2IMAGE_ARGS ${esptool_elf2image_args} PARENT_SCOPE)
+
+# patch to use full python path
+list(REMOVE_AT ESPTOOLPY 0)
+list(PREPEND ESPTOOLPY "${Python_EXECUTABLE}")
 set(ESPTOOLPY ${ESPTOOLPY} PARENT_SCOPE)
 
 # prepare to generate extra flash args
