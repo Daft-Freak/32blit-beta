@@ -1,7 +1,11 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
+#include "driver/gptimer.h"
+
 #include "engine/api_private.hpp"
+
+static uint32_t now();
 
 // blit API
 static const blit::APIConst blit_api_const {
@@ -12,7 +16,7 @@ static const blit::APIConst blit_api_const {
   nullptr, // set_screen_mode
   nullptr, // set_screen_palette
 
-  nullptr, // now
+  ::now,
   nullptr, // random
   nullptr, // exit
   nullptr, // debug
@@ -81,10 +85,29 @@ void init();
 void render(uint32_t);
 void update(uint32_t);
 
+static gptimer_handle_t timer = nullptr;
+
+static void init_timer() {
+  // setup 1ms timer
+  gptimer_config_t timer_config = {};
+  timer_config.clk_src = GPTIMER_CLK_SRC_DEFAULT;
+  timer_config.direction = GPTIMER_COUNT_UP;
+  timer_config.resolution_hz = 1000 * 1000; // 1MHz / 1us (1kHz would have too high divider)
+
+  ESP_ERROR_CHECK(gptimer_new_timer(&timer_config, &timer));
+  ESP_ERROR_CHECK(gptimer_enable(timer));
+  ESP_ERROR_CHECK(gptimer_start(timer));
+}
+
+static uint32_t now() {
+  uint64_t timer_val;
+  gptimer_get_raw_count(timer, &timer_val);
+  return timer_val / 1000;
+}
+
 extern "C"
 void app_main() {
-
-  // setup
+  init_timer();
 
   // set_screen_mode
 
@@ -94,10 +117,18 @@ void app_main() {
   // user init
   ::init();
 
-  while(true) {
-    // maybe render
+  uint32_t last_render = 0;
 
-    // blit::tick(::now());
+  while(true) {
+
+    // render timing placeholder
+    auto render_now = ::now();
+    if(render_now - last_render >= 20) {
+      ::render(render_now);
+      last_render = render_now;
+    }
+
+    blit::tick(::now());
 
     // more update
 
