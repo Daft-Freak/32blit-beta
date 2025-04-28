@@ -6,6 +6,7 @@
 #include "engine/api_private.hpp"
 
 static uint32_t now();
+static void debug(const char *str);
 
 // blit API
 static const blit::APIConst blit_api_const {
@@ -19,7 +20,7 @@ static const blit::APIConst blit_api_const {
   ::now,
   nullptr, // random
   nullptr, // exit
-  nullptr, // debug
+  ::debug,
 
   nullptr, // open_file
   nullptr, // read_file
@@ -103,6 +104,12 @@ static uint32_t now() {
   uint64_t timer_val;
   gptimer_get_raw_count(timer, &timer_val);
   return timer_val / 1000;
+}
+
+static void debug(const char *message) {
+  auto p = message;
+  while(*p)
+    putchar(*p++);
 }
 
 extern "C"
