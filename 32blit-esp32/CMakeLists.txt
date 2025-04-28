@@ -31,6 +31,7 @@ target_sources(BlitHalESP32 INTERFACE
 
 target_link_libraries(BlitHalESP32 INTERFACE
     idf::newlib
+    idf::esp_driver_gptimer
 )
 
 # we need to build something here, and it needs to link to an idf:: library or we get an error of
