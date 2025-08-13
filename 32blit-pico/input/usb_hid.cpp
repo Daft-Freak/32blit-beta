@@ -18,23 +18,30 @@ extern uint8_t hid_hat;
 extern uint32_t hid_buttons;
 extern uint8_t hid_keys[6];
 
+enum GamePadFlags {
+  Gamepad_StickIsDPAD = 1 << 0,
+};
+
 struct GamepadMapping {
   uint32_t id; // vid:pid
   uint8_t a, b, x, y;
   uint8_t up, down, left, right; // if no hat
   uint8_t menu, home, joystick;
+  uint8_t flags;
 };
 
 #define NO 0xFF
+#define SD Gamepad_StickIsDPAD
 
 static const GamepadMapping gamepad_mappings[]{
-  {0x057E2009,  3,  2,  1,  0, 17, 16, 19, 18,  8, 12, 11}, // Switch Pro Controller
-  {0x15320705,  0,  1,  3,  4, NO, NO, NO, NO, 16, 15, 13}, // Razer Raiju Mobile
-  {0x20D6A711,  2,  1,  3,  0, NO, NO, NO, NO,  8, 12, 10}, // PowerA wired Switch pro controller
-  {0x2DC89018,  0,  1,  3,  4, NO, NO, NO, NO, 10, 11, NO}, // 8BitDo Zero 2
-  {0x00000000,  0,  1,  2,  3, NO, NO, NO, NO,  4,  5,  6}  // probably wrong fallback
+  {0x057E2009,  3,  2,  1,  0, 17, 16, 19, 18,  8, 12, 11,  0}, // Switch Pro Controller
+  {0x15320705,  0,  1,  3,  4, NO, NO, NO, NO, 16, 15, 13,  0}, // Razer Raiju Mobile
+  {0x20D6A711,  2,  1,  3,  0, NO, NO, NO, NO,  8, 12, 10,  0}, // PowerA wired Switch pro controller
+  {0x2DC89018,  0,  1,  3,  4, NO, NO, NO, NO, 10, 11, NO,  0}, // 8BitDo Zero 2
+  {0x00000000,  0,  1,  2,  3, NO, NO, NO, NO,  4,  5,  6,  0}  // probably wrong fallback
 };
 
+#undef SD
 #undef NO
 
 // hat -> dpad
@@ -136,8 +143,21 @@ void update_usb_hid(uint32_t &new_buttons, blit::Vec2 &new_joystick) {
               | (hid_buttons & (1 << mapping->home)     ? uint32_t(Button::HOME) : 0)
               | (hid_buttons & (1 << mapping->joystick) ? uint32_t(Button::JOYSTICK) : 0);
 
-  new_joystick.x = (float(hid_joystick[0]) - 0x80) / 0x80;
-  new_joystick.y = (float(hid_joystick[1]) - 0x80) / 0x80;
+  if(mapping->flags & Gamepad_StickIsDPAD) {
+    // stick is actually a D-PAD
+    if(hid_joystick[0] < 0x40)
+      new_buttons |= uint32_t(Button::DPAD_LEFT);
+    else if(hid_joystick[0] > 0xC0)
+      new_buttons |= uint32_t(Button::DPAD_RIGHT);
+
+    if(hid_joystick[1] < 0x40)
+      new_buttons |= uint32_t(Button::DPAD_UP);
+    else if(hid_joystick[1] > 0xC0)
+      new_buttons |= uint32_t(Button::DPAD_DOWN);
+  } else {
+    new_joystick.x = (float(hid_joystick[0]) - 0x80) / 0x80;
+    new_joystick.y = (float(hid_joystick[1]) - 0x80) / 0x80;
+  }
 }
 
 extern const InputDriver usb_hid_driver {
