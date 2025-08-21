@@ -368,3 +368,6 @@ _deps
 stdlib/no-pic
 stdlib/pic
 stdlib/*.zip
+
+32blit-esp32/sdkconfig
+32blit-esp32/sdkconfig.old
