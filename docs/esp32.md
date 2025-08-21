@@ -38,8 +38,7 @@ launch.json (`configurations`)
     "MIMode": "gdb",
     "miDebuggerPath": "/home/daftfreak/.espressif/tools/riscv32-esp-elf-gdb/14.2_20240403/riscv32-esp-elf-gdb/bin/riscv32-esp-elf-gdb",
     "debugServerPath": "/home/daftfreak/.espressif/tools/openocd-esp32/v0.12.0-esp32-20241016/openocd-esp32/bin/openocd",
-    // disable multicore debug
-    "debugServerArgs": "-c \"set ESP_ONLYCPU 1\" -f board/esp32p4-builtin.cfg",
+    "debugServerArgs": "-f board/esp32p4-builtin.cfg",
     "filterStderr": true,
     "serverStarted": "Listening on port 3333 for gdb connections",
     "serverLaunchTimeout": 10000,
