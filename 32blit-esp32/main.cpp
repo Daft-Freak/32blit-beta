@@ -86,24 +86,49 @@ void init();
 void render(uint32_t);
 void update(uint32_t);
 
+static volatile uint32_t ms_count = 0;
 static gptimer_handle_t timer = nullptr;
 
+static bool timer_alarm_cb(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_ctx) {
+  // increment millisecond count (alarm will reset timer)
+  ms_count++;
+
+  // wake up main task every millisecond
+  auto task = (TaskHandle_t)user_ctx;
+  BaseType_t hp_task_woken = pdFALSE;
+  vTaskNotifyGiveFromISR(task, &hp_task_woken);
+
+  return hp_task_woken;
+}
+
 static void init_timer() {
-  // setup 1ms timer
+  // setup 1us timer
   gptimer_config_t timer_config = {};
   timer_config.clk_src = GPTIMER_CLK_SRC_DEFAULT;
   timer_config.direction = GPTIMER_COUNT_UP;
   timer_config.resolution_hz = 1000 * 1000; // 1MHz / 1us (1kHz would have too high divider)
 
   ESP_ERROR_CHECK(gptimer_new_timer(&timer_config, &timer));
+
+  // setup 1ms alarm
+  gptimer_alarm_config_t alarm_config = {};
+  alarm_config.reload_count = 0;
+  alarm_config.alarm_count = 1000; // 1000us == 1ms
+  alarm_config.flags.auto_reload_on_alarm = true;
+
+  ESP_ERROR_CHECK(gptimer_set_alarm_action(timer, &alarm_config));
+
+  gptimer_event_callbacks_t callbacks = {};
+  callbacks.on_alarm = timer_alarm_cb;
+  ESP_ERROR_CHECK(gptimer_register_event_callbacks(timer, &callbacks, xTaskGetCurrentTaskHandle()));
+
+  // start
   ESP_ERROR_CHECK(gptimer_enable(timer));
   ESP_ERROR_CHECK(gptimer_start(timer));
 }
 
 static uint32_t now() {
-  uint64_t timer_val;
-  gptimer_get_raw_count(timer, &timer_val);
-  return timer_val / 1000;
+  return ms_count;
 }
 
 static void debug(const char *message) {
@@ -139,8 +164,9 @@ void app_main() {
 
     // more update
 
-    // sleep
+    // sleep?
 
-    vTaskDelay(1); // hmm, this is 10ms
+    // wait until timer wakes us up again
+    xTaskNotifyWait(0, 0, nullptr, portMAX_DELAY);
   }
 }
