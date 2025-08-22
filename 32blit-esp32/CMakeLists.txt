@@ -25,11 +25,20 @@ set(FLASH_ARGS_TEMPLATE ${FLASH_ARGS_TEMPLATE} PARENT_SCOPE)
 set(FLASH_ARGS_PATCH_SCRIPT ${FLASH_ARGS_PATCH_SCRIPT} PARENT_SCOPE)
 
 # "HAL" library
+
+include(board-config.cmake)
+
 add_library(BlitHalESP32 INTERFACE)
 
 target_sources(BlitHalESP32 INTERFACE
     ${CMAKE_CURRENT_LIST_DIR}/main.cpp
+
+    ${CMAKE_CURRENT_LIST_DIR}/audio/${BLIT_AUDIO_DRIVER}.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/display/${BLIT_DISPLAY_DRIVER}.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/input/${BLIT_INPUT_DRIVER}.cpp
 )
+
+target_compile_definitions(BlitHalESP32 INTERFACE ${BLIT_BOARD_DEFINITIONS})
 
 target_link_libraries(BlitHalESP32 INTERFACE
     idf::newlib
