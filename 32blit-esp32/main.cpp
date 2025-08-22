@@ -5,6 +5,8 @@
 
 #include "engine/api_private.hpp"
 
+#include "display.hpp"
+
 static uint32_t now();
 static void debug(const char *str);
 
@@ -140,6 +142,7 @@ static void debug(const char *message) {
 extern "C"
 void app_main() {
   init_timer();
+  init_display();
 
   // set_screen_mode
 
@@ -149,24 +152,19 @@ void app_main() {
   // user init
   ::init();
 
-  uint32_t last_render = 0;
-
   while(true) {
+    auto now = ::now();
+    update_display(now);
 
-    // render timing placeholder
-    auto render_now = ::now();
-    if(render_now - last_render >= 20) {
-      ::render(render_now);
-      last_render = render_now;
-    }
-
-    blit::tick(::now());
+    int ms_to_next_update = blit::tick(::now());
 
     // more update
 
     // sleep?
 
-    // wait until timer wakes us up again
-    xTaskNotifyWait(0, 0, nullptr, portMAX_DELAY);
+    if(ms_to_next_update > 1 && !display_render_needed()) {
+      // wait until timer wakes us up again
+      xTaskNotifyWait(0, 0, nullptr, portMAX_DELAY);
+    }
   }
 }

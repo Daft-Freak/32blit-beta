@@ -40,6 +40,8 @@ target_sources(BlitHalESP32 INTERFACE
 
 target_compile_definitions(BlitHalESP32 INTERFACE ${BLIT_BOARD_DEFINITIONS})
 
+target_include_directories(BlitHalESP32 INTERFACE ${CMAKE_CURRENT_LIST_DIR})
+
 target_link_libraries(BlitHalESP32 INTERFACE
     idf::newlib
     idf::esp_driver_gptimer
