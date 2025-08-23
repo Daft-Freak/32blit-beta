@@ -1,3 +1,5 @@
+#include "driver/gpio.h"
+
 #include "esp_lcd_panel_io.h"
 #include "esp_lcd_panel_vendor.h"
 #include "esp_lcd_panel_ops.h"
@@ -12,6 +14,8 @@ static esp_lcd_panel_handle_t panel_handle = nullptr;
 
 static uint16_t *display_buffers[2];
 static int buf_index = 0;
+
+static bool backlight_enabled = false;
 
 static void *alloc_display_buffer() {
   // this depends on the bus...
@@ -129,7 +133,13 @@ void init_display() {
   }
 #endif
 
-  // backlight...
+  // backlight
+  gpio_config_t backlight_gpio_config = {};
+  backlight_gpio_config.mode = GPIO_MODE_OUTPUT;
+  backlight_gpio_config.pin_bit_mask = 1ULL << LCD_BACKLIGHT_PIN;
+
+  ESP_ERROR_CHECK(gpio_config(&backlight_gpio_config));
+  gpio_set_level(gpio_num_t(LCD_BACKLIGHT_PIN), 0);
 
   ESP_ERROR_CHECK(esp_lcd_panel_disp_on_off(panel_handle, true));
 
@@ -147,6 +157,11 @@ void update_display(uint32_t time) {
     buf_index ^= 1;
     esp_lcd_panel_draw_bitmap(panel_handle, 0, 0, DISPLAY_WIDTH, DISPLAY_HEIGHT, blit::screen.data);
     blit::screen.data = (uint8_t *)display_buffers[buf_index];
+
+    // enable backlight
+    // TODO: really want to do this after the transfer has completed
+    if(!backlight_enabled)
+      gpio_set_level(gpio_num_t(LCD_BACKLIGHT_PIN), 1);
 
     last_render = time;
   }
