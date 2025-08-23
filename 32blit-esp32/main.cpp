@@ -7,8 +7,12 @@
 
 #include "display.hpp"
 
+static const blit::Size lores_screen_size(DISPLAY_WIDTH / 2, DISPLAY_HEIGHT / 2);
+static const blit::Size hires_screen_size(DISPLAY_WIDTH, DISPLAY_HEIGHT);
+
 static uint32_t now();
 static void debug(const char *str);
+static bool set_screen_mode_format(blit::ScreenMode new_mode, blit::SurfaceTemplate &new_surf_template);
 
 // blit API
 static const blit::APIConst blit_api_const {
@@ -60,7 +64,7 @@ static const blit::APIConst blit_api_const {
 
   nullptr, // get_metadata
 
-  nullptr, // set_screen_mode_format
+  ::set_screen_mode_format,
 
   nullptr, // i2c_send
   nullptr, // i2c_recieve
@@ -139,12 +143,45 @@ static void debug(const char *message) {
     putchar(*p++);
 }
 
+static bool set_screen_mode_format(blit::ScreenMode new_mode, blit::SurfaceTemplate &new_surf_template) {
+  // default format
+  if(new_surf_template.format == (blit::PixelFormat)-1)
+    new_surf_template.format = blit::PixelFormat::RGB565;
+
+  // default bounds
+  switch(new_mode) {
+    case blit::ScreenMode::lores:
+      if(new_surf_template.bounds.empty())
+        new_surf_template.bounds = lores_screen_size;
+      else
+        new_surf_template.bounds /= 2;
+
+      break;
+    case blit::ScreenMode::hires:
+    case blit::ScreenMode::hires_palette:
+      if(new_surf_template.bounds.empty())
+        new_surf_template.bounds = hires_screen_size;
+
+      break;
+  }
+
+  if(!display_mode_supported(new_mode, new_surf_template))
+    return false;
+
+  // TODO: store info?
+
+  display_mode_changed(new_mode, new_surf_template);
+
+  return true;
+}
+
 extern "C"
 void app_main() {
   init_timer();
   init_display();
 
-  // set_screen_mode
+  // FIXME: this should be lores, but that isn't implemented yet
+  blit::set_screen_mode(blit::ScreenMode::hires);
 
   blit::render = ::render;
   blit::update = ::update;
