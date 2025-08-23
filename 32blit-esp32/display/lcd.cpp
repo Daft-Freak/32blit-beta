@@ -31,14 +31,33 @@ static void *alloc_display_buffer() {
 #endif
 }
 
+static bool on_color_trans_done(esp_lcd_panel_io_handle_t panel_io, esp_lcd_panel_io_event_data_t *edata, void *user_ctx) {
+
+  // enable backlight
+  if(!backlight_enabled) {
+    gpio_set_level(gpio_num_t(LCD_BACKLIGHT_PIN), 1);
+    backlight_enabled = true;
+  }
+
+  return false;
+}
+
 #if SOC_PPA_SUPPORTED
-bool on_ppa_trans_done(ppa_client_handle_t ppa_client, ppa_event_data_t *event_data, void *user_data) {
+static bool on_ppa_trans_done(ppa_client_handle_t ppa_client, ppa_event_data_t *event_data, void *user_data) {
   esp_lcd_panel_draw_bitmap(panel_handle, 0, 0, DISPLAY_WIDTH, DISPLAY_HEIGHT, display_buffers[1]);
   return false;
 }
 #endif
 
 void init_display() {
+  // backlight
+  gpio_config_t backlight_gpio_config = {};
+  backlight_gpio_config.mode = GPIO_MODE_OUTPUT;
+  backlight_gpio_config.pin_bit_mask = 1ULL << LCD_BACKLIGHT_PIN;
+
+  ESP_ERROR_CHECK(gpio_config(&backlight_gpio_config));
+  gpio_set_level(gpio_num_t(LCD_BACKLIGHT_PIN), 0);
+
 #ifdef LCD_I80
   // init "I80" bus (8-bit)
   esp_lcd_i80_bus_handle_t i80_bus = nullptr;
@@ -80,6 +99,11 @@ void init_display() {
 
   ESP_ERROR_CHECK(esp_lcd_new_panel_io_i80(i80_bus, &io_config, &io_handle));
 #endif
+
+  esp_lcd_panel_io_callbacks_t io_callbacks = {};
+  io_callbacks.on_color_trans_done = on_color_trans_done;
+
+  ESP_ERROR_CHECK(esp_lcd_panel_io_register_event_callbacks(io_handle, &io_callbacks, nullptr));
 
   // init panel
   esp_lcd_panel_dev_config_t panel_config = {};
@@ -145,14 +169,6 @@ void init_display() {
   }
 #endif
 
-  // backlight
-  gpio_config_t backlight_gpio_config = {};
-  backlight_gpio_config.mode = GPIO_MODE_OUTPUT;
-  backlight_gpio_config.pin_bit_mask = 1ULL << LCD_BACKLIGHT_PIN;
-
-  ESP_ERROR_CHECK(gpio_config(&backlight_gpio_config));
-  gpio_set_level(gpio_num_t(LCD_BACKLIGHT_PIN), 0);
-
   ESP_ERROR_CHECK(esp_lcd_panel_disp_on_off(panel_handle, true));
 
   // alloc buffers
@@ -206,11 +222,6 @@ void update_display(uint32_t time) {
     esp_lcd_panel_draw_bitmap(panel_handle, 0, 0, DISPLAY_WIDTH, DISPLAY_HEIGHT, blit::screen.data);
     blit::screen.data = (uint8_t *)display_buffers[buf_index];
 #endif
-
-    // enable backlight
-    // TODO: really want to do this after the transfer has completed
-    if(!backlight_enabled)
-      gpio_set_level(gpio_num_t(LCD_BACKLIGHT_PIN), 1);
 
     last_render = time;
   }
