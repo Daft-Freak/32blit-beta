@@ -180,8 +180,9 @@ void app_main() {
   init_timer();
   init_display();
 
-  // FIXME: this should be lores, but that isn't implemented yet
-  blit::set_screen_mode(blit::ScreenMode::hires);
+  // this should be lores, but that isn't implemented everywhere
+  if(!blit::set_screen_mode(blit::ScreenMode::lores, blit::PixelFormat(-1)))
+    blit::set_screen_mode(blit::ScreenMode::hires);
 
   blit::render = ::render;
   blit::update = ::update;
