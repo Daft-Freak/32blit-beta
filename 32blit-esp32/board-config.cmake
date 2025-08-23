@@ -45,3 +45,6 @@ if(NOT BLIT_INPUT_DRIVER)
 endif()
 
 # driver dependencies
+if(BLIT_DISPLAY_DRIVER STREQUAL "lcd")
+    list(APPEND BLIT_BOARD_LIBRARIES idf::esp_lcd)
+endif()
