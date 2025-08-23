@@ -46,5 +46,5 @@ endif()
 
 # driver dependencies
 if(BLIT_DISPLAY_DRIVER STREQUAL "lcd")
-    list(APPEND BLIT_BOARD_LIBRARIES idf::esp_lcd)
+    list(APPEND BLIT_BOARD_LIBRARIES idf::esp_lcd idf::esp_driver_ppa)
 endif()

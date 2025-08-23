@@ -1,4 +1,5 @@
 #include "driver/gpio.h"
+#include "driver/ppa.h"
 
 #include "esp_lcd_panel_io.h"
 #include "esp_lcd_panel_vendor.h"
@@ -11,6 +12,10 @@
 static uint32_t last_render = 0;
 static esp_lcd_panel_io_handle_t io_handle = nullptr;
 static esp_lcd_panel_handle_t panel_handle = nullptr;
+
+#if SOC_PPA_SUPPORTED
+static ppa_client_handle_t ppa_client = nullptr;
+#endif
 
 static uint16_t *display_buffers[2];
 static int buf_index = 0;
@@ -25,6 +30,13 @@ static void *alloc_display_buffer() {
   return nullptr;
 #endif
 }
+
+#if SOC_PPA_SUPPORTED
+bool on_ppa_trans_done(ppa_client_handle_t ppa_client, ppa_event_data_t *event_data, void *user_data) {
+  esp_lcd_panel_draw_bitmap(panel_handle, 0, 0, DISPLAY_WIDTH, DISPLAY_HEIGHT, display_buffers[1]);
+  return false;
+}
+#endif
 
 void init_display() {
 #ifdef LCD_I80
@@ -146,6 +158,19 @@ void init_display() {
   // alloc buffers
   display_buffers[0] = (uint16_t *)alloc_display_buffer();
   display_buffers[1] = (uint16_t *)alloc_display_buffer();
+
+  // pixel-processing accelerator
+#if SOC_PPA_SUPPORTED
+  ppa_client_config_t ppa_config = {};
+  ppa_config.oper_type = PPA_OPERATION_SRM;
+  ppa_config.max_pending_trans_num = 1;
+  ppa_config.data_burst_length = PPA_DATA_BURST_LENGTH_128;
+  ESP_ERROR_CHECK(ppa_register_client(&ppa_config, &ppa_client));
+
+  ppa_event_callbacks_t ppa_callbacks = {};
+  ppa_callbacks.on_trans_done = on_ppa_trans_done;
+  ESP_ERROR_CHECK(ppa_client_register_event_callbacks(ppa_client, &ppa_callbacks));
+#endif
 }
 
 void update_display(uint32_t time) {
@@ -153,10 +178,34 @@ void update_display(uint32_t time) {
   if(time - last_render >= 20) {
     blit::render(time);
 
+#if SOC_PPA_SUPPORTED
+    // if we have PPA, do a copy to the screen buffer so we can scale
+    // this is also closer to the original 32blit behaviour
+    ppa_srm_oper_config_t copy_config = {};
+
+    copy_config.in.buffer = blit::screen.data;
+    copy_config.in.pic_w = copy_config.in.block_w = blit::screen.bounds.w;
+    copy_config.in.pic_h = copy_config.in.block_h = blit::screen.bounds.h;
+    copy_config.in.srm_cm = PPA_SRM_COLOR_MODE_RGB565;
+
+    copy_config.out.buffer = display_buffers[1];
+    copy_config.out.buffer_size = DISPLAY_WIDTH * DISPLAY_HEIGHT * 2;
+    copy_config.out.pic_w = DISPLAY_WIDTH;
+    copy_config.out.pic_h = DISPLAY_HEIGHT;
+    copy_config.out.srm_cm = PPA_SRM_COLOR_MODE_RGB565;
+
+    copy_config.rotation_angle = PPA_SRM_ROTATION_ANGLE_0;
+    copy_config.scale_x = DISPLAY_WIDTH / blit::screen.bounds.w;
+    copy_config.scale_y = DISPLAY_HEIGHT / blit::screen.bounds.h;
+    copy_config.mode = PPA_TRANS_MODE_NON_BLOCKING;
+
+    ppa_do_scale_rotate_mirror(ppa_client, &copy_config);
+#else
     // send to display and swap buffers
     buf_index ^= 1;
     esp_lcd_panel_draw_bitmap(panel_handle, 0, 0, DISPLAY_WIDTH, DISPLAY_HEIGHT, blit::screen.data);
     blit::screen.data = (uint8_t *)display_buffers[buf_index];
+#endif
 
     // enable backlight
     // TODO: really want to do this after the transfer has completed
@@ -172,7 +221,16 @@ bool display_render_needed() {
 }
 
 bool display_mode_supported(blit::ScreenMode new_mode, const blit::SurfaceTemplate &new_surf_template) {
-  return new_surf_template.bounds == blit::Size{DISPLAY_WIDTH, DISPLAY_HEIGHT} && new_surf_template.format == blit::PixelFormat::RGB565;
+  if(new_surf_template.format != blit::PixelFormat::RGB565)
+    return false;
+
+#if SOC_PPA_SUPPORTED
+  // lores
+  if(new_surf_template.bounds == blit::Size{DISPLAY_WIDTH / 2, DISPLAY_HEIGHT / 2})
+    return true;
+#endif
+
+  return new_surf_template.bounds == blit::Size{DISPLAY_WIDTH, DISPLAY_HEIGHT};
 }
 
 void display_mode_changed(blit::ScreenMode new_mode, blit::SurfaceTemplate &new_surf_template) {
