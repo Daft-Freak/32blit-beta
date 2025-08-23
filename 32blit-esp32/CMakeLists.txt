@@ -45,6 +45,7 @@ target_include_directories(BlitHalESP32 INTERFACE ${CMAKE_CURRENT_LIST_DIR})
 target_link_libraries(BlitHalESP32 INTERFACE
     idf::newlib
     idf::esp_driver_gptimer
+    ${BLIT_BOARD_LIBRARIES}
 )
 
 # we need to build something here, and it needs to link to an idf:: library or we get an error of
