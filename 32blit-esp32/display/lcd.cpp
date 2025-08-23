@@ -71,6 +71,7 @@ void init_display() {
   panel_config.rgb_ele_order = LCD_RGB_ELEMENT_ORDER_RGB;
   panel_config.bits_per_pixel = 16;
 
+#ifdef LCD_ST7789
   ESP_ERROR_CHECK(esp_lcd_new_panel_st7789(io_handle, &panel_config, &panel_handle));
 
   esp_lcd_panel_reset(panel_handle);
@@ -126,6 +127,7 @@ void init_display() {
       0xD0, 0x08, 0x10, 0x08, 0x06, 0x06, 0x39, 0x44, 0x51, 0x0B, 0x16, 0x14, 0x2F, 0x31
     }, 14);
   }
+#endif
 
   // backlight...
 
