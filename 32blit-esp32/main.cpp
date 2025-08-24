@@ -5,7 +5,10 @@
 
 #include "engine/api_private.hpp"
 
+#include "audio.hpp"
 #include "display.hpp"
+
+static blit::AudioChannel channels[CHANNEL_COUNT];
 
 static const blit::Size lores_screen_size(DISPLAY_WIDTH / 2, DISPLAY_HEIGHT / 2);
 static const blit::Size hires_screen_size(DISPLAY_WIDTH, DISPLAY_HEIGHT);
@@ -18,7 +21,7 @@ static bool set_screen_mode_format(blit::ScreenMode new_mode, blit::SurfaceTempl
 static const blit::APIConst blit_api_const {
   blit::api_version_major, blit::api_version_minor,
 
-  nullptr, // channels
+  channels,
 
   nullptr, // set_screen_mode
   nullptr, // set_screen_palette
@@ -179,6 +182,7 @@ extern "C"
 void app_main() {
   init_timer();
   init_display();
+  init_audio();
 
   // this should be lores, but that isn't implemented everywhere
   if(!blit::set_screen_mode(blit::ScreenMode::lores, blit::PixelFormat(-1)))
@@ -193,6 +197,9 @@ void app_main() {
   while(true) {
     auto now = ::now();
     update_display(now);
+
+    // FIXME: -pico/-stm32 do this from a timer
+    update_audio(now);
 
     int ms_to_next_update = blit::tick(::now());
 
