@@ -1,5 +1,11 @@
 #pragma once
 
+#define AUDIO_I2S_MUTE_PIN  38
+#define AUDIO_I2S_DATA_PIN   8
+#define AUDIO_I2S_BCLK_PIN   6
+#define AUDIO_I2S_LRCLK_PIN  7
+
+#define AUDIO_I2S_SHIFT 2
 
 #define LCD_I80
 #define LCD_ST7789
