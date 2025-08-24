@@ -11,13 +11,17 @@
 
 #include "audio/audio.hpp"
 
+#ifndef AUDIO_I2S_SHIFT
+#define AUDIO_I2S_SHIFT 0
+#endif
+
 static i2s_chan_handle_t i2s_handle = nullptr;
 
 static void audio_task(void *) {
   uint16_t samples[256];
   while(true) {
     for(size_t i = 0; i < std::size(samples); i += 2)
-      samples[i] = samples[i + 1] = ((int)blit::get_audio_frame() - 0x8000) >> 2;
+      samples[i] = samples[i + 1] = ((int)blit::get_audio_frame() - 0x8000) >> AUDIO_I2S_SHIFT;
 
     i2s_channel_write(i2s_handle, &samples, sizeof(samples), nullptr, portMAX_DELAY);
   }
