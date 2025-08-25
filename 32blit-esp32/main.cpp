@@ -3,6 +3,8 @@
 
 #include "driver/gptimer.h"
 
+#include "esp_random.h"
+
 #include "engine/api_private.hpp"
 
 #include "audio.hpp"
@@ -27,7 +29,7 @@ static const blit::APIConst blit_api_const {
   nullptr, // set_screen_palette
 
   ::now,
-  nullptr, // random
+  esp_random,
   nullptr, // exit
   ::debug,
 
