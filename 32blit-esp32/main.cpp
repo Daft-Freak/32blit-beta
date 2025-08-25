@@ -21,6 +21,8 @@ static const blit::Size hires_screen_size(DISPLAY_WIDTH, DISPLAY_HEIGHT);
 
 static uint32_t now();
 static void debug(const char *str);
+static uint32_t get_us_timer();
+static uint32_t get_max_us_timer();
 static bool set_screen_mode_format(blit::ScreenMode new_mode, blit::SurfaceTemplate &new_surf_template);
 
 // blit API
@@ -52,8 +54,8 @@ static const blit::APIConst blit_api_const {
   is_storage_available,
 
   nullptr, // enable_us_timer
-  nullptr, // get_us_timer
-  nullptr, // get_max_us_timer
+  get_us_timer,
+  get_max_us_timer,
 
   nullptr, // decode_jpeg_buffer
   nullptr, // decode_jpeg_file
@@ -150,6 +152,23 @@ static void debug(const char *message) {
   auto p = message;
   while(*p)
     putchar(*p++);
+}
+
+static uint32_t get_us_timer() {
+  uint32_t ms_in;
+  uint64_t ret;
+
+  do {
+    ms_in = ms_count;
+    gptimer_get_raw_count(timer, &ret);
+    ret += ms_in * 1000;
+  } while(ms_in != ms_count); // avoid ms_count getting incremented in the middle
+
+  return ret;
+}
+
+static uint32_t get_max_us_timer() {
+  return 0xFFFFFFFF;
 }
 
 static bool set_screen_mode_format(blit::ScreenMode new_mode, blit::SurfaceTemplate &new_surf_template) {
