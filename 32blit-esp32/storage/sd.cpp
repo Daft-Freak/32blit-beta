@@ -61,6 +61,10 @@ static void host_init() {
   host.pwr_ctrl_handle = pwr_ctrl_handle;
 #endif
 
+#ifdef SD_HIGH_SPEED
+  host.max_freq_khz = SDMMC_FREQ_HIGHSPEED;
+#endif
+
   host_initialised = true;
 }
 
