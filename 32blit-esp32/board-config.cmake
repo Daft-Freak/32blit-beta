@@ -43,6 +43,9 @@ endif()
 if(NOT BLIT_INPUT_DRIVER)
     set(BLIT_INPUT_DRIVER "none")
 endif()
+if(NOT BLIT_STORAGE_DRIVER)
+    set(BLIT_STORAGE_DRIVER "none")
+endif()
 
 # driver dependencies
 if(BLIT_DISPLAY_DRIVER STREQUAL "lcd")
