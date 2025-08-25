@@ -24,6 +24,8 @@ set(FLASH_ARGS_PATCH_SCRIPT ${CMAKE_CURRENT_LIST_DIR}/patch-flash-args.cmake)
 set(FLASH_ARGS_TEMPLATE ${FLASH_ARGS_TEMPLATE} PARENT_SCOPE)
 set(FLASH_ARGS_PATCH_SCRIPT ${FLASH_ARGS_PATCH_SCRIPT} PARENT_SCOPE)
 
+add_subdirectory(../32blit-shared ../32blit-shared)
+
 # "HAL" library
 
 include(board-config.cmake)
@@ -32,6 +34,7 @@ add_library(BlitHalESP32 INTERFACE)
 
 target_sources(BlitHalESP32 INTERFACE
     ${CMAKE_CURRENT_LIST_DIR}/main.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/file.cpp
 
     ${CMAKE_CURRENT_LIST_DIR}/audio/${BLIT_AUDIO_DRIVER}.cpp
     ${CMAKE_CURRENT_LIST_DIR}/display/${BLIT_DISPLAY_DRIVER}.cpp
@@ -47,6 +50,7 @@ target_link_libraries(BlitHalESP32 INTERFACE
     idf::newlib
     idf::esp_driver_gptimer
     ${BLIT_BOARD_LIBRARIES}
+    FatFsBlitAPI
 )
 
 # we need to build something here, and it needs to link to an idf:: library or we get an error of

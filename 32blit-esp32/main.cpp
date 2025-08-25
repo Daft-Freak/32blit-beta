@@ -7,8 +7,12 @@
 
 #include "engine/api_private.hpp"
 
+#include "fatfs_blit_api.hpp"
+
 #include "audio.hpp"
 #include "display.hpp"
+#include "file.hpp"
+#include "storage.hpp"
 
 static blit::AudioChannel channels[CHANNEL_COUNT];
 
@@ -33,19 +37,19 @@ static const blit::APIConst blit_api_const {
   nullptr, // exit
   ::debug,
 
-  nullptr, // open_file
-  nullptr, // read_file
-  nullptr, // write_file
-  nullptr, // close_file
-  nullptr, // get_file_length
-  nullptr, // list_files
-  nullptr, // file_exists
-  nullptr, // directory_exists
-  nullptr, // create_directory
-  nullptr, // rename_file
-  nullptr, // remove_file
+  open_file,
+  read_file,
+  write_file,
+  close_file,
+  get_file_length,
+  list_files,
+  file_exists,
+  directory_exists,
+  create_directory,
+  rename_file,
+  remove_file,
   nullptr, // get_save_path
-  nullptr, // is_storage_available
+  is_storage_available,
 
   nullptr, // enable_us_timer
   nullptr, // get_us_timer
@@ -185,6 +189,7 @@ void app_main() {
   init_timer();
   init_display();
   init_audio();
+  init_fs();
 
   // this should be lores, but that isn't implemented everywhere
   if(!blit::set_screen_mode(blit::ScreenMode::lores, blit::PixelFormat(-1)))
@@ -206,6 +211,7 @@ void app_main() {
     int ms_to_next_update = blit::tick(::now());
 
     // more update
+    update_fs();
 
     // sleep?
 
