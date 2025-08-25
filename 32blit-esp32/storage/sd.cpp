@@ -2,6 +2,7 @@
 #include "sd_pwr_ctrl_by_on_chip_ldo.h"
 
 #include "driver/sdspi_host.h"
+#include "driver/sdmmc_host.h"
 
 #include "storage.hpp"
 #include "config.h"
@@ -33,6 +34,20 @@ static void host_init() {
   // prepare to init sdmmc host
   host = SDSPI_HOST_DEFAULT();
   host.slot = spi_slot;
+#elif defined(SD_SDMMC)
+  // init sdmmc
+  ESP_ERROR_CHECK(sdmmc_host_init());
+
+  sdmmc_slot_config_t slot_config = SDMMC_SLOT_CONFIG_DEFAULT();
+
+#ifdef SD_SDMMC_1BIT
+  slot_config.width = 1;
+#endif
+
+  ESP_ERROR_CHECK(sdmmc_host_init_slot(0, &slot_config));
+
+  host = SDMMC_HOST_DEFAULT();
+  host.slot = 0;
 #endif
 
 #ifdef SD_LDO_ID
