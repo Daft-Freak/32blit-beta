@@ -24,3 +24,15 @@
 #define LCD_DATA5_PIN 31
 #define LCD_DATA6_PIN 32
 #define LCD_DATA7_PIN 33
+
+//#define SD_SPI
+#define SD_SDMMC
+#define SD_SPI_CS_PIN   42
+#define SD_SPI_MOSI_PIN 44
+#define SD_SPI_MISO_PIN 39
+#define SD_SPI_SCK_PIN  43
+
+#define SD_SDMMC_1BIT // D1/2 aren't connected
+#define SD_HIGH_SPEED // works if we're using SDMMC, but not if using SPI
+
+#define SD_LDO_ID 4
