@@ -1,0 +1,55 @@
+name: CMake / ESP32
+
+on:
+  push:
+    branches:
+      - '**' # only run on branches
+  pull_request:
+  release:
+    types: [published]
+
+env:
+  # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
+  BUILD_TYPE: Release
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    container: espressif/idf:release-v5.4
+
+    steps:
+    - name: Checkout 32Blit SDK
+      uses: actions/checkout@v4
+
+    - name: Checkout Examples
+      uses: actions/checkout@v4
+      with:
+        repository: 32blit/32blit-examples
+        path: examples
+
+    - name: Install deps
+      shell: bash
+      run: |
+        source $IDF_PATH/export.sh
+        python3 -m pip install 32blit
+
+    - name: Create Build Environment
+      shell: bash
+      run: |
+        source $IDF_PATH/export.sh
+        cmake -E make_directory ${{github.workspace}}/build
+
+    - name: Configure CMake
+      shell: bash
+      run: |
+        source $IDF_PATH/export.sh
+        cmake -B ${{github.workspace}}/build $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_TOOLCHAIN_FILE=$IDF_PATH/tools/cmake/toolchain-esp32p4.cmake -DESP_TARGET=esp32p4 -DESP_BOARD=p4_wip
+
+    # Problem matching
+    - uses: ammaraskar/gcc-problem-matcher@master
+
+    - name: Build
+      shell: bash
+      run: |
+        source $IDF_PATH/export.sh
+        cmake --build ${{github.workspace}}/build --config $BUILD_TYPE -j 2
