@@ -30,13 +30,18 @@
 #define TCA9555_START_IO  11
 #define TCA9555_SELECT_IO 5
 
+static bool tca9555_found = false;
+
 void init_input() {
   // setup for reading
   uint8_t port = 0;
-  i2c_write_blocking(TCA9555_I2C, TCA9555_ADDR, &port, 1, true);
+  tca9555_found = i2c_write_timeout_us(TCA9555_I2C, TCA9555_ADDR, &port, 1, false, 1000) == 1;
 }
 
 void update_input() {
+  if(!tca9555_found)
+    return;
+
   uint16_t gpio = 0;
 
   i2c_read_blocking(TCA9555_I2C, TCA9555_ADDR, (uint8_t *)&gpio, 2, false);
