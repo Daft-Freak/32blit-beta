@@ -41,7 +41,7 @@ void Multiplayer::update() {
 
     while((num_ready = SDLNet_CheckSockets(sock_set, 0))) {
       if(num_ready == -1) {
-          std::cerr << "Failed to check socket: " << SDLNet_GetError() << std::endl;
+          //std::cerr << "Failed to check socket: " << SDLNet_GetError() << std::endl;
           return;
       }
 
@@ -51,7 +51,7 @@ void Multiplayer::update() {
           if(socket) {
               auto remote_addr = SDLNet_TCP_GetPeerAddress(socket);
               auto ip = SDL_SwapBE32(remote_addr->host);
-              std::cout << (ip >> 24) << "." << ((ip >> 16) & 0xFF) << "." << ((ip >> 8) & 0xFF) << "." << (ip & 0xFF) << " connected" << std::endl;
+              //std::cout << (ip >> 24) << "." << ((ip >> 16) & 0xFF) << "." << ((ip >> 8) & 0xFF) << "." << (ip & 0xFF) << " connected" << std::endl;
 
               SDLNet_TCP_AddSocket(sock_set, socket);
 
@@ -110,7 +110,7 @@ void Multiplayer::update() {
 
             head_off = 0;
           } else {
-            std::cerr << "Unexpected header: " << std::string(reinterpret_cast<char *>(head_buf), 8) << std::endl;
+            //std::cerr << "Unexpected header: " << std::string(reinterpret_cast<char *>(head_buf), 8) << std::endl;
             head_off = 0;
           }
 
@@ -191,7 +191,7 @@ void Multiplayer::setup() {
     // try connecting first for auto
     if(mode != Mode::Listen) {
         if(SDLNet_ResolveHost(&ip, address.c_str(), port) == -1) {
-            std::cerr << "Failed to resolve \"" << address << "\"!" << std::endl;
+            //std::cerr << "Failed to resolve \"" << address << "\"!" << std::endl;
         } else
             socket = SDLNet_TCP_Open(&ip);
     }
@@ -200,13 +200,13 @@ void Multiplayer::setup() {
         // try hosting instead unless connecting was specified
         if(SDLNet_ResolveHost(&ip, nullptr, port) == -1) {
             // this can't fail
-            std::cerr << "Failed to resolve \"any\" address!" << std::endl;
+            //std::cerr << "Failed to resolve \"any\" address!" << std::endl;
         } else
             listen_socket = SDLNet_TCP_Open(&ip);
     }
 
     if(!socket && !listen_socket) {
-        std::cerr << "Failed to open socket: " << SDLNet_GetError() << std::endl;
+        //std::cerr << "Failed to open socket: " << SDLNet_GetError() << std::endl;
         return;
     }
 

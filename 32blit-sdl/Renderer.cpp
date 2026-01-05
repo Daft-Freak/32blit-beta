@@ -13,7 +13,7 @@ Renderer::Renderer(SDL_Window *window, int width, int height) : sys_width(width)
 	//SDL_SetHint(SDL_HINT_RENDER_DRIVER, "openGL");
 	renderer = SDL_CreateRenderer(window, -1, 0);
 	if (renderer == nullptr) {
-		std::cerr << "could not create renderer: " << SDL_GetError() << std::endl;
+		//std::cerr << "could not create renderer: " << SDL_GetError() << std::endl;
 	}
 
   current = fb_texture;

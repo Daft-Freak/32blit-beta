@@ -22,7 +22,7 @@ Audio::Audio() {
     audio_device = SDL_OpenAudioDevice(nullptr, 0, &desired, &audio_spec, 0);
 
     if(audio_device == 0){
-        std::cerr << "Audio Init Failed: " << SDL_GetError() << std::endl;
+        //std::cerr << "Audio Init Failed: " << SDL_GetError() << std::endl;
     }
 
     SDL_PauseAudioDevice(audio_device, 0);

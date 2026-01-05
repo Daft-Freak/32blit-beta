@@ -32,7 +32,7 @@ VideoCapture::VideoCapture(const char *name) : name(name) {
 
 VideoCapture::~VideoCapture() {
 	if (buffer) {
-		std::cerr << "Warning: recording was not stopped before exiting." << std::endl;
+		//std::cerr << "Warning: recording was not stopped before exiting." << std::endl;
 		stop();
 	}
 }
@@ -40,7 +40,7 @@ VideoCapture::~VideoCapture() {
 void VideoCapture::start(const char *filename) {
 	buffer = (Uint8 *)malloc(System::width * System::height * SDL_BYTESPERPIXEL(SDL_PIXELFORMAT_RGB24));
 	ffmpeg_open_stream(filename, System::width, System::height, buffer);
-	std::cerr << "Started with filename " << filename << std::endl;
+	//std::cerr << "Started with filename " << filename << std::endl;
 }
 
 void VideoCapture::start() {
@@ -56,7 +56,7 @@ void VideoCapture::capture(Renderer *source) {
 		source->read_pixels(System::width, System::height, SDL_PIXELFORMAT_RGB24, buffer);
 		ffmpeg_capture();
 	} else {
-		std::cerr << "Not recording" << std::endl;
+		//std::cerr << "Not recording" << std::endl;
 	}
 }
 
@@ -64,5 +64,5 @@ void VideoCapture::stop() {
 	ffmpeg_close_stream();
 	free(buffer);
 	buffer = NULL;
-	std::cerr << "Stopped." << std::endl;
+	//std::cerr << "Stopped." << std::endl;
 }

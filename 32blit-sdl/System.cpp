@@ -27,7 +27,7 @@ static blit::Pen palette[256];
 
 // blit debug callback
 void blit_debug(const char *message) {
-	std::cout << message;
+	//std::cout << message;
 }
 
 // blit screenmode callback
@@ -454,7 +454,7 @@ void System::stop() {
   SDL_SemPost(s_loop_redraw);
 
   if(SDL_SemWaitTimeout(s_loop_ended, 500)) {
-    std::cerr << "User code appears to have frozen. Detaching thread." << std::endl;
+    //std::cerr << "User code appears to have frozen. Detaching thread." << std::endl;
     SDL_DetachThread(t_system_loop);
   } else {
     SDL_WaitThread(t_system_loop, &returnValue);
