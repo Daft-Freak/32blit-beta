@@ -55,6 +55,13 @@ jobs:
             cmake-args: -DCMAKE_TOOLCHAIN_FILE=$GITHUB_WORKSPACE/mingw.toolchain -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DSDL2_DIR=$GITHUB_WORKSPACE/SDL2/cmake -DSDL2_image_DIR=$GITHUB_WORKSPACE/SDL2_image/cmake -DSDL2_net_DIR=$GITHUB_WORKSPACE/SDL2_net/cmake
             apt-packages: ccache g++-mingw-w64 pipx python3-requests
 
+          - os: ubuntu-22.04
+            name: MinGW32
+            cache-key: mingw32
+            artifact-suffix: MinGW32
+            cmake-args: -DCMAKE_TOOLCHAIN_FILE=$GITHUB_WORKSPACE/mingw32.toolchain -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DSDL2_DIR=$GITHUB_WORKSPACE/SDL2/cmake -DSDL2_image_DIR=$GITHUB_WORKSPACE/SDL2_image/cmake -DSDL2_net_DIR=$GITHUB_WORKSPACE/SDL2_net/cmake
+            apt-packages: ccache g++-mingw-w64 pipx python3-requests
+
           - os: macos-13
             name: macOS
             cache-key: macos
@@ -142,7 +149,7 @@ jobs:
         python -m pip install 32blit requests
 
     - name: MinGW deps
-      if: matrix.name == 'MinGW'
+      if: matrix.name == 'MinGW' || matrix.name == 'MinGW32'
       run: ci/install_sdl_mingw.sh
 
     - name: Create Build Environment
