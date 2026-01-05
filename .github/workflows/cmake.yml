@@ -139,7 +139,7 @@ jobs:
         ci/install_sdl_macos.sh
         brew install ccache
         echo "CCACHE_DIR=$HOME/.ccache" >> $GITHUB_ENV
-        python3 -m pip install 32blit requests
+        python3 -m pip install --break-system-packages 32blit requests
 
     # Windows (VS) deps
     - name: Install deps
