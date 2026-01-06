@@ -100,6 +100,7 @@ blit::SurfaceInfo &set_screen_mode(blit::ScreenMode new_mode) {
 // blit timer callback
 std::chrono::steady_clock::time_point start;
 uint32_t now() {
+  return SDL_GetTicks();
 	auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start);
 	return (uint32_t)elapsed.count();
 }
