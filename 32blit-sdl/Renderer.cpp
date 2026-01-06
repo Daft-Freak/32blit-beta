@@ -1,7 +1,7 @@
 #include <algorithm>
 #include <cstdio>
 #include <cmath>
-#include <iostream>
+//#include <iostream>
 #include "SDL.h"
 
 #include "graphics/surface.hpp"
