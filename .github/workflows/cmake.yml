@@ -150,7 +150,9 @@ jobs:
 
     - name: MinGW deps
       if: matrix.name == 'MinGW' || matrix.name == 'MinGW32'
-      run: ci/install_sdl_mingw.sh
+      run: |
+        ci/install_sdl_mingw.sh
+        cp ci/libSDL2main.a SDL2/i686-w64-mingw32/lib
 
     - name: Create Build Environment
       run: |
