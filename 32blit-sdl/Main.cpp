@@ -6,6 +6,10 @@
 #include <emscripten/emscripten.h>
 #endif
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 #include "SDL.h"
 //#include <iostream>
 
@@ -227,6 +231,10 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
+#ifdef _WIN32
+  timeBeginPeriod(5);
+#endif
+
 	if (SDL_Init(SDL_INIT_VIDEO|SDL_INIT_GAMECONTROLLER|SDL_INIT_AUDIO) < 0) {
 		//std::cerr << "could not initialize SDL2: " << SDL_GetError() << std::endl;
 		return 1;
@@ -285,5 +293,9 @@ int main(int argc, char *argv[]) {
 
 	SDL_DestroyWindow(window);
 	SDL_Quit();
+
+#ifdef _WIN32
+  timeEndPeriod(5);
+#endif
 	return 0;
 }

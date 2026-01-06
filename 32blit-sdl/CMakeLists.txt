@@ -168,6 +168,10 @@ function(blit_executable NAME)
   		target_link_libraries(${NAME} -Wl,--whole-archive BlitHalSDL -Wl,--no-whole-archive)
 	endif()
 
+	if(WIN32)
+		target_link_libraries(${NAME} winmm)
+	endif()
+
 	# copy dlls to build dir for dev
 	foreach(DLL ${DLLS_TO_COPY})
 		add_custom_command(TARGET ${NAME} POST_BUILD
