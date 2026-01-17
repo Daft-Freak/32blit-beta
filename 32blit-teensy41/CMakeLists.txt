@@ -12,6 +12,7 @@ list(APPEND SOURCES
 	${TEENSY_CORE_PATH}/nonstd.c
 	${TEENSY_CORE_PATH}/Print.cpp
 	${TEENSY_CORE_PATH}/pwm.c
+	${TEENSY_CORE_PATH}/rtc.c
 	${TEENSY_CORE_PATH}/serialEvent.cpp
 	${TEENSY_CORE_PATH}/startup.c
 	${TEENSY_CORE_PATH}/tempmon.c
@@ -66,7 +67,7 @@ function(blit_executable_int_flash NAME SOURCES)
 		DESTINATION bin
 	)
 
-	# -specs=nano.specs 
+	# -specs=nano.specs
 	set_target_properties(${NAME} PROPERTIES LINK_FLAGS "-T ${MCU_LINKER_SCRIPT} ${MCU_LINKER_FLAGS_INT}")
 	set_target_properties(${NAME} PROPERTIES LINK_DEPENDS ${MCU_LINKER_SCRIPT} SUFFIX ".elf")
 
