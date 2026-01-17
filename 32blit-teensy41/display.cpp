@@ -8,6 +8,7 @@
 #include "usb_serial.h"
 
 #include "display.hpp"
+#include "display_commands.hpp"
 
 using namespace blit;
 
@@ -94,9 +95,50 @@ namespace display {
     while(!(FLEXIO3_TIMSTAT & (1 << 0)));
   }
 
-  static void write16(uint16_t v) {
-    write8(v >> 8);
-    write8(v & 0xFF);
+  static void command(uint8_t command, size_t len = 0, const char *data = nullptr) {
+    select();
+
+    digitalWriteFast(dcPin, 0); // command mode
+    write8(command);
+
+    if(data) {
+      digitalWriteFast(dcPin, 1); // data mode
+
+      for(size_t i = 0; i < len; i++)
+        write8(data[i]);
+    }
+
+    deselect();
+  }
+
+  static void set_window(uint16_t x, uint16_t y, uint16_t w, uint16_t h) {
+    uint32_t cols = __builtin_bswap32((x << 16) | (x + w - 1));
+    uint32_t rows = __builtin_bswap32((y << 16) | (y + h - 1));
+
+    command(MIPIDCS::SetColumnAddress, 4, (const char *)&cols);
+    command(MIPIDCS::SetRowAddress, 4, (const char *)&rows);
+  }
+
+  static void send_init_sequence() {
+    // ili9431
+
+    // power control 1
+    command(0xC0, 1, "\x23"); //4.6v, default 4.5v(0x21)
+
+    // VCOM control 1
+    command(0xC0, 2, "\x2B\x2B"); // 3.775v, -1.425v, default 3.925v(0x31), -1.0v (0x3C)
+
+    uint8_t madctl = MADCTL::ROW_ORDER | MADCTL::COL_ORDER | MADCTL::SWAP_XY;
+    command(MIPIDCS::SetAddressMode, 1, (char *)&madctl);
+
+    command(MIPIDCS::SetPixelFormat, 1, "\x05"); // 16bpp
+
+    command(MIPIDCS::ExitSleepMode);
+    delay(120);
+
+    command(MIPIDCS::DisplayOn);
+
+    set_window(0, 0, 320, 240);
   }
 
   void init() {
@@ -147,7 +189,6 @@ namespace display {
 
     // reset
     deselect();
-    data();
     read_idle();
 
     digitalWriteFast(resetPin, 0);
@@ -156,41 +197,8 @@ namespace display {
 
     delay(10);
 
-    // begin
-    select();
-
-    // power control 1
-    write8(0xC0);
-    data(); write8(0x23); //4.6v, default 4.5v(0x21)
-
-    // VCOM control 1
-    command(); write8(0xC5);
-    data(); write16(0x2B2B); // 3.775v, -1.425v, default 3.925v(0x31), -1.0v (0x3C)
-
-    // memory access control
-    command(); write8(0x36);
-    data(); write8(0xE0); // MV, MY, MX, BGR
-
-    // pixel format set
-    command(); write8(0x3A);
-    data(); write8(0x55); // 16bpp
-
-    // sleep out
-    command(); write8(0x11);
-    delay(120);
-
-    // display on
-    write8(0x29);
-
-    // column address set
-    write8(0x2A);
-    data(); write16(0); write16(319);
-
-    // page address set
-    command(); write8(0x2B);
-    data(); write16(0); write16(239);
-
-    deselect();
+    // send commands
+    send_init_sequence();
   }
 
   void update() {
