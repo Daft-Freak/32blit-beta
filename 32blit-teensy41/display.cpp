@@ -12,6 +12,21 @@
 
 using namespace blit;
 
+enum ST7789Reg {
+  RAMCTRL   = 0xB0,
+  PORCTRL   = 0xB2,
+  GCTRL     = 0xB7,
+  VCOMS     = 0xBB,
+  LCMCTRL   = 0xC0,
+  VDVVRHEN  = 0xC2,
+  VRHS      = 0xC3,
+  VDVS      = 0xC4,
+  FRCTRL2   = 0xC6,
+  PWCTRL1   = 0xD0,
+  PVGAMCTRL = 0xE0,
+  NVGAMCTRL = 0xE1,
+};
+
 namespace display {
   DMAMEM static uint8_t screen_fb[320 * 240 * 3]; // possibly EXTMEM
 
@@ -120,7 +135,7 @@ namespace display {
   }
 
   static void send_init_sequence() {
-    // ili9431
+#ifdef LCD_ILI9431
 
     // power control 1
     command(0xC0, 1, "\x23"); //4.6v, default 4.5v(0x21)
@@ -130,6 +145,27 @@ namespace display {
 
     uint8_t madctl = MADCTL::ROW_ORDER | MADCTL::COL_ORDER | MADCTL::SWAP_XY;
     command(MIPIDCS::SetAddressMode, 1, (char *)&madctl);
+#else // ST7789
+    // 320x240
+    command(ST7789Reg::PORCTRL, 5, "\x0c\x0c\x00\x33\x33");
+    command(ST7789Reg::GCTRL, 1, "\x35");
+    command(ST7789Reg::VCOMS, 1, "\x1f");
+    command(ST7789Reg::LCMCTRL, 1, "\x2c");
+    command(ST7789Reg::VDVVRHEN, 1, "\x01");
+    command(ST7789Reg::VRHS, 1, "\x12");
+    command(ST7789Reg::VDVS, 1, "\x20");
+    command(ST7789Reg::PWCTRL1, 2, "\xa4\xa1");
+    command(0xd6, 1, "\xa1"); // ???
+    command(ST7789Reg::PVGAMCTRL, 14, "\xD0\x08\x11\x08\x0C\x15\x39\x33\x50\x36\x13\x14\x29\x2D");
+    command(ST7789Reg::NVGAMCTRL, 14, "\xD0\x08\x10\x08\x06\x06\x39\x44\x51\x0B\x16\x14\x2F\x31");
+
+    command(ST7789Reg::FRCTRL2, 1, "\x15"); // 50Hz
+
+    command(MIPIDCS::EnterInvertMode);   // set inversion mode
+
+    uint8_t madctl = MADCTL::SCAN_ORDER | MADCTL::SWAP_XY | MADCTL::ROW_ORDER; //270deg rotation
+    command(MIPIDCS::SetAddressMode, 1, (char *)&madctl);
+#endif
 
     command(MIPIDCS::SetPixelFormat, 1, "\x05"); // 16bpp
 
