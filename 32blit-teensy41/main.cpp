@@ -66,7 +66,7 @@ static const blit::APIConst blit_api_const {
 
   nullptr, // get_metadata
 
-  nullptr, // set_screen_mode_format
+  display::set_screen_mode_format,
 
   nullptr, // i2c_send
   nullptr, // i2c_recieve
@@ -95,9 +95,6 @@ int main() {
   Serial.begin(9600); //dbg
 
   display::init();
-
-  // api setup
-  //api.set_screen_mode = display::set_screen_mode;
 
   ::set_screen_mode(ScreenMode::lores);
 

@@ -14,9 +14,8 @@ using namespace blit;
 namespace display {
   DMAMEM static uint8_t screen_fb[320 * 240 * 3]; // possibly EXTMEM
 
-  static Surface lores_screen(screen_fb, PixelFormat::RGB, Size(160, 120));
-  static Surface hires_screen(screen_fb, PixelFormat::RGB, Size(320, 240));
-  static Surface hires_palette_screen(screen_fb, PixelFormat::P, Size(320, 240));
+  static const blit::Size lores_screen_size(160, 120);
+  static const blit::Size hires_screen_size(320, 240);
 
   ScreenMode cur_screen_mode = ScreenMode::lores;
 
@@ -164,7 +163,7 @@ namespace display {
     write8(0xC0);
     data(); write8(0x23); //4.6v, default 4.5v(0x21)
 
-    // VCOM control 1  
+    // VCOM control 1
     command(); write8(0xC5);
     data(); write16(0x2B2B); // 3.775v, -1.425v, default 3.925v(0x31), -1.0v (0x3C)
 
@@ -175,7 +174,7 @@ namespace display {
     // pixel format set
     command(); write8(0x3A);
     data(); write8(0x55); // 16bpp
-  
+
     // sleep out
     command(); write8(0x11);
     delay(120);
@@ -240,30 +239,47 @@ namespace display {
     FLEXIO3_CTRL &= ~FLEXIO_CTRL_FLEXEN;
     FLEXIO3_TIMCMP0 = ((1 /*beats*/ * 2 - 1) << 8) | (FLEXIO3_TIMCMP0 & 0xFF);
     FLEXIO3_CTRL |= FLEXIO_CTRL_FLEXEN;
-  
+
     deselect();
 
     auto end = micros();
     Serial.printf("FT %ius\n", end - start);
   }
 
-  Surface &set_screen_mode(ScreenMode mode) {
+  bool set_screen_mode_format(ScreenMode mode, SurfaceTemplate &new_surf_template) {
+    if(new_surf_template.format == (PixelFormat)-1)
+      new_surf_template.format = PixelFormat::RGB;
+
     switch(mode) {
       case ScreenMode::lores:
-        screen = lores_screen;
+        if(new_surf_template.bounds.empty())
+          new_surf_template.bounds = lores_screen_size;
+        else
+          new_surf_template.bounds /= 2;
         break;
 
       case ScreenMode::hires:
-        screen = hires_screen;
-        break;
-
       case ScreenMode::hires_palette:
-        screen = hires_palette_screen;
+        if(new_surf_template.bounds.empty())
+          new_surf_template.bounds = hires_screen_size;
         break;
     }
 
+    // support check
+    if(new_surf_template.bounds != hires_screen_size && new_surf_template.bounds != lores_screen_size)
+      return false;
+
+    if(mode == ScreenMode::hires_palette)
+      return false;
+
+    if(new_surf_template.format != blit::PixelFormat::RGB)
+      return false;
+
+    // set data
+    new_surf_template.data = screen_fb;
+
     cur_screen_mode = mode;
 
-    return screen;
+    return true;
   }
 }
