@@ -28,7 +28,7 @@ enum ST7789Reg {
 };
 
 namespace display {
-  DMAMEM static uint8_t screen_fb[320 * 240 * 3]; // possibly EXTMEM
+  DMAMEM static uint8_t screen_fb[320 * 240 * 2]; // possibly EXTMEM
 
   static const blit::Size lores_screen_size(160, 120);
   static const blit::Size hires_screen_size(320, 240);
