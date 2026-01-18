@@ -28,15 +28,6 @@ enum ST7789Reg {
 };
 
 namespace display {
-  DMAMEM static uint8_t screen_fb[320 * 240 * 2]; // possibly EXTMEM
-
-  static const blit::Size lores_screen_size(160, 120);
-  static const blit::Size hires_screen_size(320, 240);
-
-  ScreenMode cur_screen_mode = ScreenMode::lores;
-  static bool data_started = false;
-  static uint8_t *cur_data_ptr = nullptr, *cur_data_end = nullptr;
-  static int lores_line = 0, lores_x = 0;
 
   static const int flexIO3ToPin[]{19, 18, 14, 15, 40, 41, 17, 16,
                                   22, 23, 20, 21, 38, 39, 26, 27}; // 0-15, 16-19 and 28-29 are also available
@@ -50,6 +41,16 @@ namespace display {
   static const int csPin = 21;
   static const int dcPin = 20;
   static const int resetPin = 13;
+
+  static const blit::Size lores_screen_size(160, 120);
+  static const blit::Size hires_screen_size(320, 240);
+
+  DMAMEM static uint8_t screen_fb[320 * 240 * 2]; // possibly EXTMEM
+
+  ScreenMode cur_screen_mode = ScreenMode::lores;
+  static bool data_started = false;
+  static uint8_t *cur_data_ptr = nullptr, *cur_data_end = nullptr;
+  static int lores_line = 0, lores_x = 0;
 
   static void hires_irq_handler() {
     if(cur_data_ptr == cur_data_end) {
