@@ -143,7 +143,7 @@ namespace display {
     // VCOM control 1
     command(0xC0, 2, "\x2B\x2B"); // 3.775v, -1.425v, default 3.925v(0x31), -1.0v (0x3C)
 
-    uint8_t madctl = MADCTL::ROW_ORDER | MADCTL::COL_ORDER | MADCTL::SWAP_XY;
+    uint8_t madctl = MADCTL::RGB | MADCTL::ROW_ORDER | MADCTL::COL_ORDER | MADCTL::SWAP_XY;
     command(MIPIDCS::SetAddressMode, 1, (char *)&madctl);
 #else // ST7789
     // 320x240
@@ -163,7 +163,7 @@ namespace display {
 
     command(MIPIDCS::EnterInvertMode);   // set inversion mode
 
-    uint8_t madctl = MADCTL::SCAN_ORDER | MADCTL::SWAP_XY | MADCTL::ROW_ORDER; //270deg rotation
+    uint8_t madctl = MADCTL::RGB | MADCTL::SCAN_ORDER | MADCTL::SWAP_XY | MADCTL::ROW_ORDER; // 270deg rotation
     command(MIPIDCS::SetAddressMode, 1, (char *)&madctl);
 #endif
 
@@ -256,11 +256,10 @@ namespace display {
 
     if(cur_screen_mode == ScreenMode::lores){
       for(int y = 0; y < 240; y++) {
-        auto ptr = screen_fb + (y / 2 * 160 * 3); // only increment every pther line
+        auto ptr = reinterpret_cast<uint16_t *>(screen_fb) + (y / 2 * 160); // only increment every other line
 
         for(int x = 0; x < 160; x++) {
-          uint8_t r = *ptr++, g = *ptr++, b = *ptr++;
-          uint16_t col0 = ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3);
+          uint16_t col0 = *ptr++;
 
           FLEXIO3_SHIFTBUFBYS0 = col0 << 16 | col0; // horizontal double
 
@@ -269,14 +268,11 @@ namespace display {
       }
 
     } else if(cur_screen_mode == ScreenMode::hires) {
-      auto ptr = screen_fb;
+      auto ptr = reinterpret_cast<uint16_t *>(screen_fb);
       for(int y = 0; y < 240; y++) {
         for(int x = 0; x < 160; x++) {
-          uint8_t r = *ptr++, g = *ptr++, b = *ptr++;
-          uint16_t col0 = ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3);
-
-          r = *ptr++, g = *ptr++, b = *ptr++;
-          uint16_t col1 = ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3);
+          uint16_t col0 = *ptr++;
+          uint16_t col1 = *ptr++;
           FLEXIO3_SHIFTBUFBYS0 = col0 << 16 | col1;
 
           while(!(FLEXIO3_SHIFTSTAT & (1 << 0)));
@@ -297,7 +293,7 @@ namespace display {
 
   bool set_screen_mode_format(ScreenMode mode, SurfaceTemplate &new_surf_template) {
     if(new_surf_template.format == (PixelFormat)-1)
-      new_surf_template.format = PixelFormat::RGB;
+      new_surf_template.format = PixelFormat::RGB565;
 
     switch(mode) {
       case ScreenMode::lores:
@@ -321,7 +317,7 @@ namespace display {
     if(mode == ScreenMode::hires_palette)
       return false;
 
-    if(new_surf_template.format != blit::PixelFormat::RGB)
+    if(new_surf_template.format != blit::PixelFormat::RGB565)
       return false;
 
     // set data
