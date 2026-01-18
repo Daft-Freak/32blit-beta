@@ -268,12 +268,12 @@ namespace display {
       }
 
     } else if(cur_screen_mode == ScreenMode::hires) {
-      auto ptr = reinterpret_cast<uint16_t *>(screen_fb);
+      auto ptr = reinterpret_cast<uint32_t *>(screen_fb);
       for(int y = 0; y < 240; y++) {
         for(int x = 0; x < 160; x++) {
-          uint16_t col0 = *ptr++;
-          uint16_t col1 = *ptr++;
-          FLEXIO3_SHIFTBUFBYS0 = col0 << 16 | col1;
+          // swap the pixels
+          uint32_t data = *ptr++;
+          FLEXIO3_SHIFTBUFBYS0 = data << 16 | data >> 16;
 
           while(!(FLEXIO3_SHIFTSTAT & (1 << 0)));
         }
