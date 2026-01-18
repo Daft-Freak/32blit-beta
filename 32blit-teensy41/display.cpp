@@ -35,8 +35,8 @@ namespace display {
 
   ScreenMode cur_screen_mode = ScreenMode::lores;
 
-  static const int flexIOToPin[]{19, 18, 14, 15, 40, 41, 17, 16,
-                                 22, 23, 20, 21, 38, 39, 26, 27}; //0-15, 16-19 and 28-29 are also available
+  static const int flexIO3ToPin[]{19, 18, 14, 15, 40, 41, 17, 16,
+                                  22, 23, 20, 21, 38, 39, 26, 27}; // 0-15, 16-19 and 28-29 are also available
 
   // flexio pins
   static const int data0FlexPin = 0; // 0-7
@@ -66,26 +66,26 @@ namespace display {
   }
 
   /*static void read_active() {
-    digitalWriteFast(flexIOToPin[rdFlexPin], 0);
+    digitalWriteFast(flexIO3ToPin[rdFlexPin], 0);
   }*/
 
   static void read_idle() {
-    digitalWriteFast(flexIOToPin[rdFlexPin], 1);
+    digitalWriteFast(flexIO3ToPin[rdFlexPin], 1);
   }
 
   /*static void set_read_mode() {
     for(int i = 0; i < 8; i++)
-      pinMode(flexIOToPin[data0FlexPin + i], INPUT);
+      pinMode(flexIO3ToPin[data0FlexPin + i], INPUT);
 
-    pinMode(flexIOToPin[wrFlexPin], OUTPUT);
+    pinMode(flexIO3ToPin[wrFlexPin], OUTPUT);
   }*/
 
   static void set_write_mode() {
     for(int i = 0; i < 8; i++)
-      *portConfigRegister(flexIOToPin[data0FlexPin + i]) = 0x19;
+      *portConfigRegister(flexIO3ToPin[data0FlexPin + i]) = 0x19;
 
-    *portConfigRegister(flexIOToPin[wrFlexPin]) = 0x19;
-    pinMode(flexIOToPin[rdFlexPin], OUTPUT);
+    *portConfigRegister(flexIO3ToPin[wrFlexPin]) = 0x19;
+    pinMode(flexIO3ToPin[rdFlexPin], OUTPUT);
   }
 
   /*static uint8_t read8() {
@@ -179,7 +179,10 @@ namespace display {
 
   void init() {
     // setup clock
-    CCM_CS1CDR = (CCM_CS1CDR & ~CCM_CS1CDR_FLEXIO2_CLK_PODF(7)) | CCM_CS1CDR_FLEXIO2_CLK_PODF(2); // 3
+    // 480MHz ref
+    // FLEXIO2_CLK_PRED defaults to 1 (/ 2)
+    // 480 / 2 / 3 = 80MHz
+    CCM_CS1CDR = (CCM_CS1CDR & ~CCM_CS1CDR_FLEXIO2_CLK_PODF(7)) | CCM_CS1CDR_FLEXIO2_CLK_PODF(3 - 1);
     CCM_CCGR7 |= CCM_CCGR7_FLEXIO3(CCM_CCGR_ON);
 
     // reset flexio
@@ -189,8 +192,9 @@ namespace display {
 
     // pins
     for(int i = 0; i < 8; i++)
-        *portConfigRegister(flexIOToPin[data0FlexPin + i]) = 0x19;
+        *portConfigRegister(flexIO3ToPin[data0FlexPin + i]) = 0x19;
 
+    // 8 bit width
     uint32_t shiftCfg = FLEXIO_SHIFTCFG_PWIDTH(7) | FLEXIO_SHIFTCFG_INSRC;
 
     FLEXIO3_SHIFTCFG0 = shiftCfg;
@@ -204,20 +208,21 @@ namespace display {
     FLEXIO3_SHIFTCFG3 = shiftCfg;
     FLEXIO3_SHIFTCTL3 = FLEXIO_SHIFTCTL_SMOD(2 /*transmit*/);
 
-    //timcmp cfg ctl
-    const int baudDiv = 4; //?
+    // timcmp cfg ctl
+    // 80 / 4 = 20MHz
+    const int baudDiv = 4;
     FLEXIO3_TIMCMP0 = ((1 /*beats*/ * 2 - 1) << 8) | (baudDiv / 2 - 1);
     FLEXIO3_TIMCFG0 = FLEXIO_TIMCFG_TIMDIS(2 /*on compare*/) | FLEXIO_TIMCFG_TIMENA(2/*on trigger high*/);
     FLEXIO3_TIMCTL0 = FLEXIO_TIMCTL_TRGSEL((0 << 2) | 1 /*status flag*/) | FLEXIO_TIMCTL_TRGPOL
                     | FLEXIO_TIMCTL_TRGSRC | FLEXIO_TIMCTL_PINCFG(3 /*output*/) | FLEXIO_TIMCTL_PINSEL(wrFlexPin)
                     | FLEXIO_TIMCTL_PINPOL | FLEXIO_TIMCTL_TIMOD(1 /*dual 8-bit baud*/);
 
-    //enable
+    // enable
     FLEXIO3_CTRL |= FLEXIO_CTRL_FLEXEN;
 
     pinMode(csPin, OUTPUT);
     pinMode(dcPin, OUTPUT);
-    pinMode(flexIOToPin[rdFlexPin], OUTPUT);
+    pinMode(flexIO3ToPin[rdFlexPin], OUTPUT);
 
     pinMode(resetPin, OUTPUT);
 
