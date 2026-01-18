@@ -16,11 +16,13 @@ int sm_set_pool(struct smalloc_pool *, void *, size_t, int, smalloc_oom_handler)
   return 0;
 }
 
+static blit::AudioChannel channels[CHANNEL_COUNT];
+
 // blit API
 static const blit::APIConst blit_api_const {
   blit::api_version_major, blit::api_version_minor,
 
-  nullptr, // channels
+  ::channels,
 
   nullptr, // set_screen_mode
   nullptr, // set_screen_palette
