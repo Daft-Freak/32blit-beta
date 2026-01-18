@@ -34,6 +34,9 @@ namespace display {
   static const blit::Size hires_screen_size(320, 240);
 
   ScreenMode cur_screen_mode = ScreenMode::lores;
+  static bool data_started = false;
+  static uint8_t *cur_data_ptr = nullptr, *cur_data_end = nullptr;
+  static int lores_line = 0, lores_x = 0;
 
   static const int flexIO3ToPin[]{19, 18, 14, 15, 40, 41, 17, 16,
                                   22, 23, 20, 21, 38, 39, 26, 27}; // 0-15, 16-19 and 28-29 are also available
@@ -47,6 +50,77 @@ namespace display {
   static const int csPin = 21;
   static const int dcPin = 20;
   static const int resetPin = 13;
+
+  static void hires_irq_handler() {
+    if(cur_data_ptr == cur_data_end) {
+      // done, disable irq
+      FLEXIO3_SHIFTSIEN = 0;
+    } else {
+      // setup the next 16 pixels
+      auto ptr = reinterpret_cast<uint32_t *>(cur_data_ptr);
+
+      // rotate to swap the pairs of pixels
+
+      uint32_t data = *ptr++;
+      FLEXIO3_SHIFTBUFBYS0 = data << 16 | data >> 16;
+      data = *ptr++;
+      FLEXIO3_SHIFTBUFBYS1 = data << 16 | data >> 16;
+      data = *ptr++;
+      FLEXIO3_SHIFTBUFBYS2 = data << 16 | data >> 16;
+      data = *ptr++;
+      FLEXIO3_SHIFTBUFBYS3 = data << 16 | data >> 16;
+      data = *ptr++;
+      FLEXIO3_SHIFTBUFBYS4 = data << 16 | data >> 16;
+      data = *ptr++;
+      FLEXIO3_SHIFTBUFBYS5 = data << 16 | data >> 16;
+      data = *ptr++;
+      FLEXIO3_SHIFTBUFBYS6 = data << 16 | data >> 16;
+      data = *ptr++;
+      FLEXIO3_SHIFTBUFBYS7 = data << 16 | data >> 16;
+
+      cur_data_ptr = reinterpret_cast<uint8_t *>(ptr);
+    }
+  }
+
+  static void lores_irq_handler() {
+    if(cur_data_ptr == cur_data_end) {
+      // done, disable irq
+      FLEXIO3_SHIFTSIEN = 0;
+    } else {
+      // setup the next 8 pixels (doubled to 16)
+      auto ptr = reinterpret_cast<uint16_t *>(cur_data_ptr);
+
+      // duplicate to do horizontal double
+
+      uint16_t data = *ptr++;
+      FLEXIO3_SHIFTBUFBYS0 = data << 16 | data;
+      data = *ptr++;
+      FLEXIO3_SHIFTBUFBYS1 = data << 16 | data;
+      data = *ptr++;
+      FLEXIO3_SHIFTBUFBYS2 = data << 16 | data;
+      data = *ptr++;
+      FLEXIO3_SHIFTBUFBYS3 = data << 16 | data;
+      data = *ptr++;
+      FLEXIO3_SHIFTBUFBYS4 = data << 16 | data;
+      data = *ptr++;
+      FLEXIO3_SHIFTBUFBYS5 = data << 16 | data;
+      data = *ptr++;
+      FLEXIO3_SHIFTBUFBYS6 = data << 16 | data;
+      data = *ptr++;
+      FLEXIO3_SHIFTBUFBYS7 = data << 16 | data;
+
+      // reset to start of line every other line (to duplicate lines)
+      lores_x += 8;
+      if(lores_x == lores_screen_size.w) {
+        lores_x = 0;
+        lores_line++;
+        if(lores_line & 1)
+          ptr -= lores_screen_size.w;
+      }
+
+      cur_data_ptr = reinterpret_cast<uint8_t *>(ptr);
+    }
+  }
 
   // helpers
   static void select() {
@@ -110,7 +184,21 @@ namespace display {
     while(!(FLEXIO3_TIMSTAT & (1 << 0)));
   }
 
+  // init/commands
   static void command(uint8_t command, size_t len = 0, const char *data = nullptr) {
+
+    if(data_started) {
+      deselect();
+
+      // reset flexio config
+      FLEXIO3_CTRL &= ~FLEXIO_CTRL_FLEXEN;
+      FLEXIO3_TIMCTL0 = (FLEXIO3_TIMCTL0 & ~FLEXIO_TIMCTL_TRGSEL(0x3F)) | FLEXIO_TIMCTL_TRGSEL((0 << 2) | 1 /*status flag*/);
+      FLEXIO3_TIMCMP0 = ((1 /*beats*/ * 2 - 1) << 8) | (FLEXIO3_TIMCMP0 & 0xFF);
+      FLEXIO3_CTRL |= FLEXIO_CTRL_FLEXEN;
+
+      data_started = false;
+    }
+
     select();
 
     digitalWriteFast(dcPin, 0); // command mode
@@ -201,12 +289,21 @@ namespace display {
     FLEXIO3_SHIFTCTL0 = FLEXIO_SHIFTCTL_TIMSEL(0) | FLEXIO_SHIFTCTL_PINCFG(3 /*output*/) | FLEXIO_SHIFTCTL_PINSEL(data0FlexPin)
                       | FLEXIO_SHIFTCTL_SMOD(2 /*transmit*/);
 
+    // chain the other shifters
     FLEXIO3_SHIFTCFG1 = shiftCfg;
     FLEXIO3_SHIFTCTL1 = FLEXIO_SHIFTCTL_SMOD(2 /*transmit*/);
     FLEXIO3_SHIFTCFG2 = shiftCfg;
     FLEXIO3_SHIFTCTL2 = FLEXIO_SHIFTCTL_SMOD(2 /*transmit*/);
     FLEXIO3_SHIFTCFG3 = shiftCfg;
     FLEXIO3_SHIFTCTL3 = FLEXIO_SHIFTCTL_SMOD(2 /*transmit*/);
+    FLEXIO3_SHIFTCFG4 = shiftCfg;
+    FLEXIO3_SHIFTCTL4 = FLEXIO_SHIFTCTL_SMOD(2 /*transmit*/);
+    FLEXIO3_SHIFTCFG5 = shiftCfg;
+    FLEXIO3_SHIFTCTL5 = FLEXIO_SHIFTCTL_SMOD(2 /*transmit*/);
+    FLEXIO3_SHIFTCFG6 = shiftCfg;
+    FLEXIO3_SHIFTCTL6 = FLEXIO_SHIFTCTL_SMOD(2 /*transmit*/);
+    FLEXIO3_SHIFTCFG7 = shiftCfg;
+    FLEXIO3_SHIFTCTL7 = FLEXIO_SHIFTCTL_SMOD(2 /*transmit*/);
 
     // timcmp cfg ctl
     // 80 / 4 = 20MHz
@@ -216,6 +313,10 @@ namespace display {
     FLEXIO3_TIMCTL0 = FLEXIO_TIMCTL_TRGSEL((0 << 2) | 1 /*status flag*/) | FLEXIO_TIMCTL_TRGPOL
                     | FLEXIO_TIMCTL_TRGSRC | FLEXIO_TIMCTL_PINCFG(3 /*output*/) | FLEXIO_TIMCTL_PINSEL(wrFlexPin)
                     | FLEXIO_TIMCTL_PINPOL | FLEXIO_TIMCTL_TIMOD(1 /*dual 8-bit baud*/);
+
+
+    //FLEXIO3_SHIFTSIEN = 1 << 0;
+    NVIC_ENABLE_IRQ(IRQ_FLEXIO3);
 
     // enable
     FLEXIO3_CTRL |= FLEXIO_CTRL_FLEXEN;
@@ -243,52 +344,42 @@ namespace display {
   }
 
   void update() {
-    auto start = micros();
-    select();
+    if(!data_started) {
+      select();
 
-    command(); write8(0x2C); // memory write
-    data();
+      command(); write8(MIPIDCS::WriteMemoryStart); // memory write
+      data();
 
-    // more beats
-    FLEXIO3_CTRL &= ~FLEXIO_CTRL_FLEXEN;
-    FLEXIO3_TIMCMP0 = ((4 /*beats*/ * 2 - 1) << 8) | (FLEXIO3_TIMCMP0 & 0xFF);
-    FLEXIO3_CTRL |= FLEXIO_CTRL_FLEXEN;
+      // reconfigure to use all the available shift buffer
+      FLEXIO3_CTRL &= ~FLEXIO_CTRL_FLEXEN;
+      // trigger on shifter 7 status flag
+      FLEXIO3_TIMCTL0 = (FLEXIO3_TIMCTL0 & ~FLEXIO_TIMCTL_TRGSEL(0x3F)) | FLEXIO_TIMCTL_TRGSEL((7 << 2) | 1 /*status flag*/);
+      FLEXIO3_TIMCMP0 = ((32 /*beats*/ * 2 - 1) << 8) | (FLEXIO3_TIMCMP0 & 0xFF);
 
-    if(cur_screen_mode == ScreenMode::lores){
-      for(int y = 0; y < 240; y++) {
-        auto ptr = reinterpret_cast<uint16_t *>(screen_fb) + (y / 2 * 160); // only increment every other line
+      FLEXIO3_CTRL |= FLEXIO_CTRL_FLEXEN;
 
-        for(int x = 0; x < 160; x++) {
-          uint16_t col0 = *ptr++;
-
-          FLEXIO3_SHIFTBUFBYS0 = col0 << 16 | col0; // horizontal double
-
-          while(!(FLEXIO3_SHIFTSTAT & (1 << 0)));
-        }
-      }
-
-    } else if(cur_screen_mode == ScreenMode::hires) {
-      auto ptr = reinterpret_cast<uint32_t *>(screen_fb);
-      for(int y = 0; y < 240; y++) {
-        for(int x = 0; x < 160; x++) {
-          // swap the pixels
-          uint32_t data = *ptr++;
-          FLEXIO3_SHIFTBUFBYS0 = data << 16 | data >> 16;
-
-          while(!(FLEXIO3_SHIFTSTAT & (1 << 0)));
-        }
-      }
+      data_started = true;
     }
 
-    // back to normal
-    FLEXIO3_CTRL &= ~FLEXIO_CTRL_FLEXEN;
-    FLEXIO3_TIMCMP0 = ((1 /*beats*/ * 2 - 1) << 8) | (FLEXIO3_TIMCMP0 & 0xFF);
-    FLEXIO3_CTRL |= FLEXIO_CTRL_FLEXEN;
+    // setup the irq handler
+    if(cur_screen_mode == ScreenMode::lores){
+      cur_data_ptr = screen_fb;
+      cur_data_end = screen_fb + (lores_screen_size.area() * 2);
 
-    deselect();
+      lores_x = 0;
+      lores_line = 0;
 
-    auto end = micros();
-    Serial.printf("FT %ius\n", end - start);
+      attachInterruptVector(IRQ_FLEXIO3, lores_irq_handler);
+
+    } else if(cur_screen_mode == ScreenMode::hires) {
+      cur_data_ptr = screen_fb;
+      cur_data_end = screen_fb + (hires_screen_size.area() * 2);
+
+      attachInterruptVector(IRQ_FLEXIO3, hires_irq_handler);
+    }
+
+    // enable irqs
+    FLEXIO3_SHIFTSIEN = 1 << 0;
   }
 
   bool set_screen_mode_format(ScreenMode mode, SurfaceTemplate &new_surf_template) {
