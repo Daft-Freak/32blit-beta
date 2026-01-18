@@ -104,17 +104,14 @@ int main() {
   // user init
   ::init();
 
-  uint32_t last_render = 0;
-
   while(true) {
     tick(millis());
 
     auto now = millis();
 
-    if(now - last_render >= 20) {
+    if(display::update_needed(now)) {
       ::render(now);
-      display::update();
-      last_render = now;
+      display::update(now);
     }
   }
 

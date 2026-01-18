@@ -6,7 +6,9 @@
 
 namespace display {
   void init();
-  void update();
+  void update(uint32_t time);
+
+  bool update_needed(uint32_t time);
 
   bool set_screen_mode_format(blit::ScreenMode mode, blit::SurfaceTemplate &new_surf_template);
 }

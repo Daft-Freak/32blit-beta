@@ -52,6 +52,8 @@ namespace display {
   static uint8_t *cur_data_ptr = nullptr, *cur_data_end = nullptr;
   static int lores_line = 0, lores_x = 0;
 
+  uint32_t last_update_time = 0;
+
   static void hires_irq_handler() {
     if(cur_data_ptr == cur_data_end) {
       // done, disable irq
@@ -344,7 +346,7 @@ namespace display {
     send_init_sequence();
   }
 
-  void update() {
+  void update(uint32_t time) {
     if(!data_started) {
       select();
 
@@ -379,8 +381,21 @@ namespace display {
       attachInterruptVector(IRQ_FLEXIO3, hires_irq_handler);
     }
 
+    last_update_time = time;
+
     // enable irqs
     FLEXIO3_SHIFTSIEN = 1 << 0;
+
+  }
+
+  bool update_needed(uint32_t time) {
+    // aim for 50FPS
+    // TODO: TE
+    if(time - last_update_time < 20)
+      return false;
+
+    // make sure we're not still copying the previous frame
+    return !(FLEXIO3_SHIFTSIEN & (1 << 0));
   }
 
   bool set_screen_mode_format(ScreenMode mode, SurfaceTemplate &new_surf_template) {
