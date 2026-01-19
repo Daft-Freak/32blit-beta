@@ -10,6 +10,7 @@
 #include "audio.hpp"
 #include "display.hpp"
 #include "file.hpp"
+#include "sd.hpp"
 
 using namespace blit;
 
@@ -120,17 +121,30 @@ int main() {
 
   display::init();
   audio::init();
-  init_fs();
+  sd_init();
 
   ::set_screen_mode(ScreenMode::lores);
 
   blit::render = ::render;
   blit::update = ::update;
 
+  // wait a little (up to 10ms) for SD detection
+  for(int i = 0; i < 10; i++) {
+    if(sd_update()) {
+      init_fs();
+      break;
+    }
+    delay(1);
+  }
+
   // user init
   ::init();
 
   while(true) {
+    // init fs on sd detection
+    if(sd_update())
+      init_fs();
+
     tick(millis());
 
     auto now = millis();

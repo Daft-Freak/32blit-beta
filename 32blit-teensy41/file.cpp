@@ -7,42 +7,37 @@
 #include "diskio.h"
 
 #include "file.hpp"
+#include "sd.hpp"
 
 static FATFS fs;
-static bool initialised = false;
 
 // fatfs io funcs
 DSTATUS disk_initialize(BYTE pdrv) {
-  // do init
-  return initialised ? RES_OK : STA_NOINIT;
+  // should have already initialised card before calling init
+  return disk_status(pdrv);
 }
 
 DSTATUS disk_status(BYTE pdrv) {
-  return initialised ? RES_OK : STA_NOINIT;
+  return sd_get_initialised() ? RES_OK : STA_NOINIT;
 }
 
 DRESULT disk_read(BYTE pdrv, BYTE *buff, LBA_t sector, UINT count) {
   static_assert(FF_MIN_SS == FF_MAX_SS);
-  return RES_ERROR;
+  return sd_read_blocks(sector, buff, count) ? RES_OK : RES_ERROR;
 }
 
 DRESULT disk_write(BYTE pdrv, const BYTE *buff, LBA_t sector, UINT count) {
-  return RES_ERROR;
+  return sd_write_blocks(sector, buff, count) ? RES_OK : RES_ERROR;
 }
 
 DRESULT disk_ioctl(BYTE pdrv, BYTE cmd, void* buff) {
-  uint16_t block_size;
-  uint32_t num_blocks;
-
   switch(cmd) {
     case CTRL_SYNC:
       return RES_OK;
 
-    /*case GET_SECTOR_COUNT:
-      get_storage_size(block_size, num_blocks);
-      *(LBA_t *)buff = num_blocks;
+    case GET_SECTOR_COUNT:
+      *(LBA_t *)buff = sd_get_num_blocks();
       return RES_OK;
-    */
 
     case GET_BLOCK_SIZE:
       *(DWORD *)buff = 1;

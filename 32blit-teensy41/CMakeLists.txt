@@ -30,6 +30,7 @@ list(APPEND SOURCES
 	file.cpp
 	display.cpp
 	main.cpp
+	sd.cpp
 )
 
 add_library(BlitHalTeensy41 OBJECT ${SOURCES})
