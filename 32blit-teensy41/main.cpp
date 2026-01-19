@@ -7,6 +7,7 @@
 #include "engine/engine.hpp"
 #include "engine/api_private.hpp"
 
+#include "audio.hpp"
 #include "display.hpp"
 
 using namespace blit;
@@ -109,6 +110,7 @@ int main() {
   Serial.begin(9600); //dbg
 
   display::init();
+  audio::init();
 
   ::set_screen_mode(ScreenMode::lores);
 

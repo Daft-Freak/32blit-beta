@@ -6,6 +6,7 @@ list(APPEND SOURCES
 	${TEENSY_CORE_PATH}/bootdata.c
 	${TEENSY_CORE_PATH}/clockspeed.c
 	${TEENSY_CORE_PATH}/digital.c
+	${TEENSY_CORE_PATH}/DMAChannel.cpp
 	${TEENSY_CORE_PATH}/EventResponder.cpp
 	${TEENSY_CORE_PATH}/delay.c
 	${TEENSY_CORE_PATH}/HardwareSerial.cpp
@@ -22,6 +23,7 @@ list(APPEND SOURCES
 	${TEENSY_CORE_PATH}/usb_serial.c
 	${TEENSY_CORE_PATH}/yield.cpp
 
+	audio.cpp
 	display.cpp
 	main.cpp
 )
