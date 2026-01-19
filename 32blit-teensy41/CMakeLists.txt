@@ -2,6 +2,8 @@ set(TEENSY_CORE_PATH "cores/teensy4" CACHE PATH "Path to Teensy 4 core")
 set(TEENSY_LOADER_CLI_PATH "teensy_loader_cli" CACHE PATH "Path to Teensy loader CLI")
 set(TEENSY_TOOLS_PATH "${TEENSY_CORE_PATH}/../../../../tools" CACHE PATH "Path to Teensy tools")
 
+add_subdirectory(../32blit-shared ../32blit-shared)
+
 list(APPEND SOURCES
 	${TEENSY_CORE_PATH}/analog.c
 	${TEENSY_CORE_PATH}/bootdata.c
@@ -25,6 +27,7 @@ list(APPEND SOURCES
 	${TEENSY_CORE_PATH}/yield.cpp
 
 	audio.cpp
+	file.cpp
 	display.cpp
 	main.cpp
 )
@@ -33,6 +36,7 @@ add_library(BlitHalTeensy41 OBJECT ${SOURCES})
 
 set(INCLUDE_DIRS
 	${TEENSY_CORE_PATH}
+	${CMAKE_CURRENT_SOURCE_DIR}
 	${CMAKE_CURRENT_SOURCE_DIR}/../32blit
 )
 #set(HAL_INCLUDE_DIRS ${INCLUDE_DIRS} PARENT_SCOPE)
@@ -62,6 +66,8 @@ set_target_properties(BlitHalTeensy41 PROPERTIES
 	#INTERPROCEDURAL_OPTIMIZATION TRUE
 	CXX_EXTENSIONS TRUE
 )
+
+target_link_libraries(BlitHalTeensy41 PRIVATE FatFsBlitAPI)
 
 function(blit_executable_int_flash NAME SOURCES)
 	add_executable(${NAME} $<TARGET_OBJECTS:BlitHalTeensy41> ${SOURCES} ${ARGN})

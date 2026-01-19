@@ -9,6 +9,7 @@
 
 #include "audio.hpp"
 #include "display.hpp"
+#include "file.hpp"
 
 using namespace blit;
 
@@ -53,17 +54,17 @@ static const blit::APIConst blit_api_const {
   nullptr, // exit
   ::debug,
 
-  nullptr, // open_file
-  nullptr, // read_file
-  nullptr, // write_file
-  nullptr, // close_file
-  nullptr, // get_file_length
-  nullptr, // list_files
-  nullptr, // file_exists
-  nullptr, // directory_exists
-  nullptr, // create_directory
-  nullptr, // rename_file
-  nullptr, // remove_file
+  ::open_file,
+  ::read_file,
+  ::write_file,
+  ::close_file,
+  ::get_file_length,
+  ::list_files,
+  ::file_exists,
+  ::directory_exists,
+  ::create_directory,
+  ::rename_file,
+  ::remove_file,
   nullptr, // get_save_path
   nullptr, // is_storage_available
 
@@ -119,6 +120,7 @@ int main() {
 
   display::init();
   audio::init();
+  init_fs();
 
   ::set_screen_mode(ScreenMode::lores);
 
