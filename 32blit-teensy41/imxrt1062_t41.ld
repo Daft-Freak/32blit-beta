@@ -35,6 +35,7 @@ SECTIONS
 	} > FLASH
 
 	.text.progmem : {
+		*(SORT_BY_ALIGNMENT(SORT_BY_NAME(.rodata*))) /*modified*/
 		*(.progmem*)
 		. = ALIGN(4);
 	} > FLASH
@@ -54,7 +55,7 @@ SECTIONS
 
 	.data : {
 		*(.endpoint_queue)
-		*(SORT_BY_ALIGNMENT(SORT_BY_NAME(.rodata*)))
+		/**(SORT_BY_ALIGNMENT(SORT_BY_NAME(.rodata*)))*/
 		*(SORT_BY_ALIGNMENT(SORT_BY_NAME(.data*)))
 		KEEP(*(.vectorsram))
 	} > DTCM  AT> FLASH
