@@ -31,6 +31,10 @@ static uint32_t prng_xorshift64s_hi(void) {
   return (x * UINT64_C(2685821657736338717)) >> 32;
 }
 
+static void debug(const char *message) {
+  Serial.write(message);
+}
+
 // blit API
 static const blit::APIConst blit_api_const {
   blit::api_version_major, blit::api_version_minor,
@@ -43,7 +47,7 @@ static const blit::APIConst blit_api_const {
   millis, // now
   prng_xorshift64s_hi, // random
   nullptr, // exit
-  nullptr, // debug
+  ::debug,
 
   nullptr, // open_file
   nullptr, // read_file
