@@ -35,6 +35,10 @@ static void debug(const char *message) {
   Serial.write(message);
 }
 
+static uint32_t get_max_us_timer() {
+  return 0xFFFFFFFF; // i _think_ micros has the full range...
+}
+
 // blit API
 static const blit::APIConst blit_api_const {
   blit::api_version_major, blit::api_version_minor,
@@ -64,8 +68,8 @@ static const blit::APIConst blit_api_const {
   nullptr, // is_storage_available
 
   nullptr, // enable_us_timer
-  nullptr, // get_us_timer
-  nullptr, // get_max_us_timer
+  micros, // get_us_timer
+  get_max_us_timer,
 
   nullptr, // decode_jpeg_buffer
   nullptr, // decode_jpeg_file
