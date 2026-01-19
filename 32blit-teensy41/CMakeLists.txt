@@ -1,4 +1,5 @@
 set(TEENSY_CORE_PATH "cores/teensy4" CACHE PATH "Path to Teensy 4 core")
+set(TEENSY_LOADER_CLI_PATH "teensy_loader_cli" CACHE PATH "Path to Teensy loader CLI")
 set(TEENSY_TOOLS_PATH "${TEENSY_CORE_PATH}/../../../../tools" CACHE PATH "Path to Teensy tools")
 
 list(APPEND SOURCES

@@ -15,8 +15,7 @@ function(blit_executable NAME SOURCES)
 	blit_executable_int_flash(${NAME} ${SOURCES} ${ARGN})
 
 	add_custom_target(${NAME}.flash DEPENDS ${NAME}
-		COMMAND ${TEENSY_TOOLS_PATH}/teensy_post_compile -file=${NAME} -path=${CMAKE_CURRENT_BINARY_DIR} -tools=${TEENSY_TOOLS_PATH}
-		COMMAND ${TEENSY_TOOLS_PATH}/teensy_reboot
+		COMMAND ${TEENSY_LOADER_CLI_PATH}  --mcu TEENSY41 -w -s ${CMAKE_CURRENT_BINARY_DIR}/${NAME}.hex
 	)
 endfunction()
 
