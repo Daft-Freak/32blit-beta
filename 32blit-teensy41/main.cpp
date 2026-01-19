@@ -18,6 +18,18 @@ int sm_set_pool(struct smalloc_pool *, void *, size_t, int, smalloc_oom_handler)
 
 static blit::AudioChannel channels[CHANNEL_COUNT];
 
+static uint64_t prng_state = 0x32B717;
+
+// TODO: at least seed with the TRNG
+static uint32_t prng_xorshift64s_hi(void) {
+  uint64_t x = prng_state;
+  x ^= x >> 12;
+  x ^= x << 25;
+  x ^= x >> 27;
+  prng_state = x;
+  return (x * UINT64_C(2685821657736338717)) >> 32;
+}
+
 // blit API
 static const blit::APIConst blit_api_const {
   blit::api_version_major, blit::api_version_minor,
@@ -28,7 +40,7 @@ static const blit::APIConst blit_api_const {
   nullptr, // set_screen_palette
 
   millis, // now
-  nullptr, // random
+  prng_xorshift64s_hi, // random
   nullptr, // exit
   nullptr, // debug
 
