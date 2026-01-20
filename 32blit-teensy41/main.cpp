@@ -41,6 +41,10 @@ static uint32_t get_max_us_timer() {
   return 0xFFFFFFFF; // i _think_ micros has the full range...
 }
 
+static const char *get_launch_path() {
+  return nullptr;
+}
+
 // blit API
 static const blit::APIConst blit_api_const {
   blit::api_version_major, blit::api_version_minor,
@@ -80,7 +84,7 @@ static const blit::APIConst blit_api_const {
   nullptr, // erase_game
   nullptr, // get_type_handler_metadata
 
-  nullptr, // get_launch_path
+  ::get_launch_path,
 
   nullptr, // is_multiplayer_connected
   nullptr, // set_multiplayer_enabled
