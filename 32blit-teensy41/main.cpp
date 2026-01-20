@@ -9,6 +9,7 @@
 
 #include "audio.hpp"
 #include "display.hpp"
+#include "input.hpp"
 #include "file.hpp"
 #include "sd.hpp"
 
@@ -127,6 +128,8 @@ int main() {
   audio::init();
   sd_init();
 
+  input::init();
+
   ::set_screen_mode(ScreenMode::lores);
 
   blit::render = ::render;
@@ -148,6 +151,8 @@ int main() {
     // init fs on sd detection
     if(sd_update())
       init_fs();
+
+    input::update();
 
     tick(millis());
 

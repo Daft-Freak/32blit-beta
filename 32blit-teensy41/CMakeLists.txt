@@ -31,6 +31,9 @@ list(APPEND SOURCES
 	display.cpp
 	main.cpp
 	sd.cpp
+
+	# TODO: driver config
+	input/tca9555.cpp
 )
 
 add_library(BlitHalTeensy41 OBJECT ${SOURCES})
