@@ -272,8 +272,8 @@ namespace display {
     // setup clock
     // 480MHz ref
     // FLEXIO2_CLK_PRED defaults to 1 (/ 2)
-    // 480 / 2 / 3 = 80MHz
-    CCM_CS1CDR = (CCM_CS1CDR & ~CCM_CS1CDR_FLEXIO2_CLK_PODF(7)) | CCM_CS1CDR_FLEXIO2_CLK_PODF(3 - 1);
+    // 480 / 2 / 4 = 60MHz
+    CCM_CS1CDR = (CCM_CS1CDR & ~CCM_CS1CDR_FLEXIO2_CLK_PODF(7)) | CCM_CS1CDR_FLEXIO2_CLK_PODF(4 - 1);
     CCM_CCGR7 |= CCM_CCGR7_FLEXIO3(CCM_CCGR_ON);
 
     // reset flexio
@@ -309,7 +309,7 @@ namespace display {
     FLEXIO3_SHIFTCTL7 = FLEXIO_SHIFTCTL_SMOD(2 /*transmit*/);
 
     // timcmp cfg ctl
-    // 80 / 4 = 20MHz
+    // 60 / 4 = 15MHz
     const int baudDiv = 4;
     FLEXIO3_TIMCMP0 = ((1 /*beats*/ * 2 - 1) << 8) | (baudDiv / 2 - 1);
     FLEXIO3_TIMCFG0 = FLEXIO_TIMCFG_TIMDIS(2 /*on compare*/) | FLEXIO_TIMCFG_TIMENA(2/*on trigger high*/);
