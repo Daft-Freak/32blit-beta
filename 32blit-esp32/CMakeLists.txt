@@ -3,6 +3,7 @@ include($ENV{IDF_PATH}/tools/cmake/idf.cmake)
 # ESP_TARGET is how we detect an ESP32 build, so should be set
 idf_build_process(${ESP_TARGET}
     SDKCONFIG ${CMAKE_CURRENT_LIST_DIR}/sdkconfig
+    SDKCONFIG_DEFAULTS ${CMAKE_CURRENT_LIST_DIR}/sdkconfig.defaults
 )
 
 # grab some internal vars for later
