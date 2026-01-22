@@ -15,6 +15,7 @@ static esp_lcd_panel_handle_t panel_handle = nullptr;
 
 #if SOC_PPA_SUPPORTED
 static ppa_client_handle_t ppa_client = nullptr;
+static int ppa_trans_steps = 0;
 #endif
 
 static uint16_t *display_buffers[2];
@@ -44,6 +45,9 @@ static bool on_color_trans_done(esp_lcd_panel_io_handle_t panel_io, esp_lcd_pane
 
 #if SOC_PPA_SUPPORTED
 static bool on_ppa_trans_done(ppa_client_handle_t ppa_client, ppa_event_data_t *event_data, void *user_data) {
+  if(--ppa_trans_steps > 0)
+    return false;
+
   esp_lcd_panel_draw_bitmap(panel_handle, 0, 0, DISPLAY_WIDTH, DISPLAY_HEIGHT, display_buffers[1]);
   return false;
 }
@@ -233,7 +237,7 @@ void init_display() {
 #if SOC_PPA_SUPPORTED
   ppa_client_config_t ppa_config = {};
   ppa_config.oper_type = PPA_OPERATION_SRM;
-  ppa_config.max_pending_trans_num = 1;
+  ppa_config.max_pending_trans_num = 5;
   ppa_config.data_burst_length = PPA_DATA_BURST_LENGTH_128;
   ESP_ERROR_CHECK(ppa_register_client(&ppa_config, &ppa_client));
 
@@ -249,27 +253,93 @@ void update_display(uint32_t time) {
     blit::render(time);
 
 #if SOC_PPA_SUPPORTED
+    bool hires = blit::screen.bounds.w == DISPLAY_WIDTH;
     // if we have PPA, do a copy to the screen buffer so we can scale
     // this is also closer to the original 32blit behaviour
     ppa_srm_oper_config_t copy_config = {};
 
     copy_config.in.buffer = blit::screen.data;
-    copy_config.in.pic_w = copy_config.in.block_w = blit::screen.bounds.w;
-    copy_config.in.pic_h = copy_config.in.block_h = blit::screen.bounds.h;
     copy_config.in.srm_cm = PPA_SRM_COLOR_MODE_RGB565;
 
-    copy_config.out.buffer = display_buffers[1];
-    copy_config.out.buffer_size = DISPLAY_WIDTH * DISPLAY_HEIGHT * 2;
-    copy_config.out.pic_w = DISPLAY_WIDTH;
-    copy_config.out.pic_h = DISPLAY_HEIGHT;
     copy_config.out.srm_cm = PPA_SRM_COLOR_MODE_RGB565;
 
     copy_config.rotation_angle = PPA_SRM_ROTATION_ANGLE_0;
-    copy_config.scale_x = DISPLAY_WIDTH / blit::screen.bounds.w;
-    copy_config.scale_y = DISPLAY_HEIGHT / blit::screen.bounds.h;
+    copy_config.scale_x = 1;
+    copy_config.scale_y = 1;
     copy_config.mode = PPA_TRANS_MODE_NON_BLOCKING;
 
-    ppa_do_scale_rotate_mirror(ppa_client, &copy_config);
+    if(hires) {
+      ppa_trans_steps = 1; // only one transfer
+      // 1:1 copy
+      copy_config.in.buffer = blit::screen.data;
+      copy_config.in.pic_w = copy_config.in.block_w = blit::screen.bounds.w;
+      copy_config.in.pic_h = copy_config.in.block_h = blit::screen.bounds.h;
+
+      copy_config.out.buffer = display_buffers[1];
+      copy_config.out.buffer_size = DISPLAY_WIDTH * DISPLAY_HEIGHT * 2;
+      copy_config.out.pic_w = DISPLAY_WIDTH;
+      copy_config.out.pic_h = DISPLAY_HEIGHT;
+
+      ppa_do_scale_rotate_mirror(ppa_client, &copy_config);
+    } else {
+      // reinterpret as 1px wide
+      // and copy to a 2px wide image
+      // max size for DMA2D seems to be 8K, so we have to break this up
+
+      int steps = std::ceil(blit::screen.bounds.area() / 8192.0f);
+      ppa_trans_steps = steps + 2; // +2 for vertical copies
+
+      int h = blit::screen.bounds.w * (blit::screen.bounds.h / steps);
+
+      // copy into the bottom half of the dest
+      auto temp_buf = display_buffers[1] + DISPLAY_WIDTH * (DISPLAY_HEIGHT / 2);
+
+      auto in_ptr = reinterpret_cast<uint16_t *>(blit::screen.data);
+      auto out_ptr = temp_buf;
+
+      copy_config.in.pic_w = copy_config.in.block_w = 1;
+      copy_config.in.pic_h = copy_config.in.block_h = h;
+
+      copy_config.out.buffer_size = DISPLAY_WIDTH * DISPLAY_HEIGHT * 2;
+      copy_config.out.pic_w = 2;
+      copy_config.out.pic_h = h;
+
+      copy_config.scale_x = 2;
+
+      for(int i = 0; i < steps; i++) {
+        copy_config.in.buffer = in_ptr;
+        copy_config.out.buffer = out_ptr;
+
+        ppa_do_scale_rotate_mirror(ppa_client, &copy_config);
+
+        // next
+        in_ptr += h;
+        out_ptr += h * 2;
+      }
+
+      // now we've done the horizontal double, do a couple more copies for the vertical double
+      // copy from width * half height to double width * half height
+      // (effectively skipping a line after each line)
+
+      copy_config.in.buffer = temp_buf;
+      copy_config.in.pic_w = copy_config.in.block_w = DISPLAY_WIDTH;
+      copy_config.in.pic_h = copy_config.in.block_h = blit::screen.bounds.h;
+
+      copy_config.out.buffer = display_buffers[1];
+      copy_config.out.pic_w = DISPLAY_WIDTH * 2;
+      copy_config.out.pic_h = blit::screen.bounds.h;
+
+      copy_config.scale_x = 1;
+
+      ppa_do_scale_rotate_mirror(ppa_client, &copy_config);
+
+      // then copy it again to the other half
+      copy_config.in.buffer = display_buffers[1];
+      copy_config.in.pic_w *= 2;
+      copy_config.out.buffer = display_buffers[1] + DISPLAY_WIDTH;
+      ppa_do_scale_rotate_mirror(ppa_client, &copy_config);
+    }
+
 #else
     // send to display and swap buffers
     buf_index ^= 1;
