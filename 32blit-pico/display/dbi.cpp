@@ -311,7 +311,15 @@ static void send_init_sequence() {
   if(DISPLAY_WIDTH == 480 && DISPLAY_HEIGHT == 320) {
     command(0xC0, 2, "\x17\x12"); // PWCTRL1
     command(0xC1, 1, "\x41"); // PWCTRL2
+
+    // some displays need the special "IPS code"
+    // which it seems is a different VCOM(-0.79688V instead of -1.71875v)
+    // and inversion (done later)
+#ifdef LCD_ILI9488_IPS
+    command(0xC5, 3, "\x00\x4D\x80"); // VMCTRL
+#else
     command(0xC5, 3, "\x00\x12\x80"); // VMCTRL
+#endif
 
     command(0xB1, 1, "\xA0"); // FRMCTR1 (60Hz)
     command(0xB7, 1, "\x86"); // ETMOD
@@ -319,6 +327,10 @@ static void send_init_sequence() {
     command(0XE0, 15, "\x00\x03\x09\x08\x16\x0A\x3F\x78\x4C\x09\x0A\x08\x16\x1A\x0F"); // PGAMCTRL
     command(0XE1, 15, "\x00\x16\x19\x03\x0F\x05\x32\x45\x46\x04\x0E\x0D\x35\x37\x0F"); // NGAMCTRL
   }
+
+#ifdef LCD_ILI9488_IPS
+  command(MIPIDCS::EnterInvertMode);
+#endif
 
   command(MIPIDCS::ExitSleepMode);  // leave sleep mode
   command(MIPIDCS::DisplayOn);  // turn display on
