@@ -118,7 +118,12 @@ void init_display() {
   esp_lcd_panel_reset(panel_handle);
   esp_lcd_panel_init(panel_handle);
 
+#ifdef LCD_ILI9488_IPS
+  esp_lcd_panel_invert_color(panel_handle, true);
+#else
   esp_lcd_panel_invert_color(panel_handle, false);
+#endif
+
   esp_lcd_panel_set_gap(panel_handle, 0, 0);
   esp_lcd_panel_swap_xy(panel_handle, true);
   esp_lcd_panel_mirror(panel_handle, true, true);
@@ -134,9 +139,15 @@ void init_display() {
       0x41
     }, 1);
 
+#ifdef LCD_ILI9488_IPS
+    esp_lcd_panel_io_tx_param(io_handle, 0xC5/*VMCTRL*/, (uint8_t[]) {
+        0x00, 0x4D, 0x80
+    }, 3);
+#else
     esp_lcd_panel_io_tx_param(io_handle, 0xC5/*VMCTRL*/, (uint8_t[]) {
         0x00, 0x12, 0x80
     }, 3);
+#endif
 
     esp_lcd_panel_io_tx_param(io_handle, 0xB1/*FRMCTR1*/, (uint8_t[]) {
       0xA0
