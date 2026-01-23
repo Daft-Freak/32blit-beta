@@ -71,7 +71,15 @@ function(blit_executable NAME)
 
     # this only works properly for one executable
     # (binary generation and flashing will only work for the last one)
-    idf_build_executable(${NAME})
+    #idf_build_executable(${NAME})
+
+    # most of what idf_build_executable does
+    # (assuming the top-level workaround target sets up everything else...)
+    idf_build_get_property(link_options LINK_OPTIONS)
+    idf_build_get_property(link_depends __LINK_DEPENDS)
+    set_property(TARGET ${NAME} APPEND PROPERTY LINK_OPTIONS "${link_options}")
+    set_property(TARGET ${NAME} APPEND PROPERTY LINK_DEPENDS "${link_depends}")
+    add_dependencies(${NAME} __idf_build_target)
 
     # generate bins for everything
     add_custom_command(TARGET ${NAME} POST_BUILD
