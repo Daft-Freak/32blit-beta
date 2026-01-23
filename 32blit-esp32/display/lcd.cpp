@@ -20,6 +20,7 @@ static int ppa_trans_steps = 0;
 
 static uint16_t *display_buffers[2];
 static int buf_index = 0;
+static bool display_update_done = true;
 
 static bool backlight_enabled = false;
 
@@ -40,11 +41,17 @@ static bool on_color_trans_done(esp_lcd_panel_io_handle_t panel_io, esp_lcd_pane
     backlight_enabled = true;
   }
 
+  display_update_done = true;
+
   return false;
 }
 
 #if SOC_PPA_SUPPORTED
 static bool on_ppa_trans_done(ppa_client_handle_t ppa_client, ppa_event_data_t *event_data, void *user_data) {
+  // if we have two buffers, we're done using the drawn to one after the first copy
+  if(display_buffers[1] != display_buffers[0])
+    display_update_done = true;
+
   if(--ppa_trans_steps > 0)
     return false;
 
@@ -233,6 +240,9 @@ void init_display() {
   display_buffers[0] = (uint16_t *)alloc_display_buffer();
   display_buffers[1] = (uint16_t *)alloc_display_buffer();
 
+  if(!display_buffers[1])
+    display_buffers[1] = display_buffers[0];
+
   // pixel-processing accelerator
 #if SOC_PPA_SUPPORTED
   ppa_client_config_t ppa_config = {};
@@ -248,12 +258,20 @@ void init_display() {
 }
 
 void update_display(uint32_t time) {
+  // can't do anything if last update still in progress
+  if(!display_update_done)
+    return;
+
   // render timing placeholder
   if(time - last_render >= 20) {
     blit::render(time);
 
 #if SOC_PPA_SUPPORTED
+    display_update_done = false;
+
     bool hires = blit::screen.bounds.w == DISPLAY_WIDTH;
+    bool single_buf = display_buffers[1] == display_buffers[0];
+
     // if we have PPA, do a copy to the screen buffer so we can scale
     // this is also closer to the original 32blit behaviour
     ppa_srm_oper_config_t copy_config = {};
@@ -268,7 +286,10 @@ void update_display(uint32_t time) {
     copy_config.scale_y = 1;
     copy_config.mode = PPA_TRANS_MODE_NON_BLOCKING;
 
-    if(hires) {
+    if(hires && single_buf) {
+      // if we only have one buffer, draw it directly
+      esp_lcd_panel_draw_bitmap(panel_handle, 0, 0, DISPLAY_WIDTH, DISPLAY_HEIGHT, display_buffers[1]);
+    } else if(hires) {
       ppa_trans_steps = 1; // only one transfer
       // 1:1 copy
       copy_config.in.buffer = blit::screen.data;
