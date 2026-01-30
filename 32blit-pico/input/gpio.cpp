@@ -21,8 +21,8 @@ static constexpr int button_io[] {
   BUTTON_X_PIN,
   BUTTON_Y_PIN,
 
-  BUTTON_HOME_PIN,
   BUTTON_MENU_PIN,
+  BUTTON_HOME_PIN,
   BUTTON_JOYSTICK_PIN,
 };
 
@@ -37,8 +37,8 @@ static constexpr bool button_active[] {
   BUTTON_X_ACTIVE_HIGH,
   BUTTON_Y_ACTIVE_HIGH,
 
-  BUTTON_HOME_ACTIVE_HIGH,
   BUTTON_MENU_ACTIVE_HIGH,
+  BUTTON_HOME_ACTIVE_HIGH,
   BUTTON_JOYSTICK_ACTIVE_HIGH,
 };
 
@@ -81,7 +81,7 @@ void update_input() {
     // pin not defined, skip
     if(button_io[i] == -1)
       continue;
-    
+
     bool pin_state = !!(io & (1 << button_io[i]));
 
     if(pin_state == button_active[i])
