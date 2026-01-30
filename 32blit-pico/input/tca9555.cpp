@@ -35,7 +35,7 @@ static bool tca9555_found = false;
 void init_input() {
   // setup for reading
   uint8_t port = 0;
-  tca9555_found = i2c_write_timeout_us(TCA9555_I2C, TCA9555_ADDR, &port, 1, true, 1000) == 1;
+  tca9555_found = i2c_write_timeout_us(TCA9555_I2C, TCA9555_ADDR, &port, 1, false, 1000) == 1;
 }
 
 void update_input() {
