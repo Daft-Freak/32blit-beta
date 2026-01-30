@@ -560,12 +560,14 @@ static bool dma_is_busy() {
   return dma_channel_is_busy(dma_channel);
 }
 
+#ifdef LCD_VSYNC_PIN
 static void vsync_callback(uint gpio, uint32_t events) {
   if(!do_render && !dma_is_busy()) {
     ::update();
     do_render = true;
   }
 }
+#endif
 
 void init_display() {
   frame_buffer = screen_fb;
