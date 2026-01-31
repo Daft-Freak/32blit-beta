@@ -85,6 +85,12 @@ target_sources(BlitHalPico INTERFACE
     ${CMAKE_CURRENT_LIST_DIR}/usb/${BLIT_USB_DRIVER}.cpp
 )
 
+# pull in powman code so the thing can be turned off...
+if(PICO_BOARD STREQUAL "pimoroni_tufty2350")
+    list(APPEND BLIT_BOARD_LIBRARIES hardware_powman)
+    target_sources(BlitHalPico INTERFACE ${CMAKE_CURRENT_LIST_DIR}/board/pimoroni_tufty2350/powman.c)
+endif()
+
 # BLIT_SENSOR_XXX=1 defines
 list(TRANSFORM BLIT_SENSOR_DRIVER TOUPPER OUTPUT_VARIABLE SENSOR_DEFINES)
 list(TRANSFORM SENSOR_DEFINES PREPEND BLIT_SENSOR_)
