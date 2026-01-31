@@ -2,6 +2,8 @@
 
 #include "sensor.hpp"
 
+#include "engine/api_private.hpp"
+
 extern SensorDriver lsm6ds3tr_c_driver;
 
 static SensorDriver *sensor_drivers[] {
@@ -12,6 +14,8 @@ static SensorDriver *sensor_drivers[] {
 static constexpr unsigned num_sensor_drivers = sizeof(sensor_drivers) / sizeof(sensor_drivers[0]);
 
 void init_sensors() {
+  blit::api_data.sensors = nullptr;
+
   for(unsigned i = 0; i < num_sensor_drivers; i++)
     sensor_drivers[i]->init();
 }
