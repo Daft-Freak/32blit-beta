@@ -279,6 +279,15 @@ static void init_i2c() {
 }
 
 int main() {
+
+#ifdef BLIT_BOARD_PIMORONI_TUFTY2350
+  // comments say this is related to the RTC
+  // but the display doesn't work without setting it...
+  gpio_put(BW_SW_POWER_EN, true);
+  gpio_set_dir(BW_SW_POWER_EN, true);
+  gpio_set_function(BW_SW_POWER_EN, GPIO_FUNC_SIO);
+#endif
+
 #if OVERCLOCK_250
 #ifndef PICO_RP2350
   // Apply a modest overvolt, default is 1.10v.
