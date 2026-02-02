@@ -22,6 +22,6 @@
 
 #define LCD_TRANSPOSE 1
 
-// there are white LEDs
-
 #define DEFAULT_I2C_CLOCK 400000
+
+#define LED_MONO_PINS 0, 1, 2, 3
