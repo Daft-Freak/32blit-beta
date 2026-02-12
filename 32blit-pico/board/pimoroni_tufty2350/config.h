@@ -1,11 +1,24 @@
 #pragma once
 
+#ifdef GITHUB_UNIVERSE
+// buttons were adjusted on the final tufty for the PSRAM CS
+#define BUTTON_UP_PIN   10
+#define BUTTON_DOWN_PIN  6
+#define BUTTON_A_PIN     7
+#define BUTTON_B_PIN     8
+#define BUTTON_X_PIN     9 // C
+#define BUTTON_HOME_PIN 22
+
+#else
+
 #define BUTTON_UP_PIN   11
 #define BUTTON_DOWN_PIN  6
 #define BUTTON_A_PIN     7
 #define BUTTON_B_PIN     9
 #define BUTTON_X_PIN    10 // C
 #define BUTTON_HOME_PIN 22
+
+#endif
 
 #define DISPLAY_ST7789
 
@@ -17,7 +30,9 @@
 #define LCD_RD_PIN 31
 #define LCD_MOSI_PIN 32 // DB0
 #define LCD_BACKLIGHT_PIN 26
+#ifndef GITHUB_UNIVERSE
 #define LCD_VSYNC_PIN 21
+#endif
 #define LCD_MAX_CLOCK 15000000
 
 #define LCD_TRANSPOSE 1
