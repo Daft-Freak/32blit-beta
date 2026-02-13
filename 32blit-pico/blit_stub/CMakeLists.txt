@@ -1,0 +1,5 @@
+if(PICO_PLATFORM MATCHES "^rp2350")
+    blit_executable(blit_stub stub.cpp PICO_BLIT)
+    blit_metadata(blit_stub metadata.yml)
+    target_link_libraries(blit_stub hardware_flash)
+endif()
