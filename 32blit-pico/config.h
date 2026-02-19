@@ -230,6 +230,10 @@
 #define OVERCLOCK_250 1
 #endif
 
+#ifndef SD_PIO
+#define SD_PIO 1
+#endif
+
 #ifndef SD_SPI_OVERCLOCK
 #define SD_SPI_OVERCLOCK 1
 #endif

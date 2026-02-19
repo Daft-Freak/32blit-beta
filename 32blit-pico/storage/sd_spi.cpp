@@ -13,7 +13,8 @@
 
 #define SD_TIMEOUT 10
 
-static PIO sd_pio = pio1;
+#define sd_pio __CONCAT(pio, SD_PIO)
+
 static int sd_sm = 0;
 static bool sd_io_initialised = false;
 
