@@ -1,8 +1,5 @@
 cmake_minimum_required(VERSION 3.15...3.31)
 
-# has to be before project
-include(32blit-pico/sdk_import.cmake)
-
 project(32blit)
 
 if(MSVC)
