@@ -48,7 +48,7 @@ if(NOT BLIT_STORAGE_DRIVER)
 endif()
 
 # driver dependencies
-if(BLIT_DISPLAY_DRIVER STREQUAL "lcd")
+if(BLIT_DISPLAY_DRIVER STREQUAL "lcd" OR BLIT_DISPLAY_DRIVER STREQUAL "lcd_rgb")
     list(APPEND BLIT_BOARD_LIBRARIES idf::esp_lcd idf::esp_driver_ppa)
 endif()
 
