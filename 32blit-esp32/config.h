@@ -12,3 +12,7 @@
 #ifndef DISPLAY_HEIGHT
 #define DISPLAY_HEIGHT 240
 #endif
+
+#ifndef LCD_RESET_PIN
+#define LCD_RESET_PIN -1
+#endif
