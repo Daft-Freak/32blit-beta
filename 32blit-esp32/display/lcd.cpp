@@ -35,11 +35,13 @@ static void *alloc_display_buffer() {
 
 static bool on_color_trans_done(esp_lcd_panel_io_handle_t panel_io, esp_lcd_panel_io_event_data_t *edata, void *user_ctx) {
 
+#ifdef LCD_BACKLIGHT_PIN
   // enable backlight
   if(!backlight_enabled) {
     gpio_set_level(gpio_num_t(LCD_BACKLIGHT_PIN), 1);
     backlight_enabled = true;
   }
+#endif
 
   display_update_done = true;
 
@@ -61,6 +63,8 @@ static bool on_ppa_trans_done(ppa_client_handle_t ppa_client, ppa_event_data_t *
 #endif
 
 void init_display() {
+
+#ifdef LCD_BACKLIGHT_PIN
   // backlight
   gpio_config_t backlight_gpio_config = {};
   backlight_gpio_config.mode = GPIO_MODE_OUTPUT;
@@ -68,6 +72,7 @@ void init_display() {
 
   ESP_ERROR_CHECK(gpio_config(&backlight_gpio_config));
   gpio_set_level(gpio_num_t(LCD_BACKLIGHT_PIN), 0);
+#endif
 
 #ifdef LCD_I80
   // init "I80" bus (8-bit)
