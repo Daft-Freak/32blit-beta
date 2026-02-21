@@ -1,8 +1,11 @@
+#include <cstring>
+
 #include "driver/gpio.h"
 
 #include "esp_lcd_panel_io.h"
 #include "esp_lcd_panel_rgb.h"
 #include "esp_lcd_panel_ops.h"
+#include "rom/cache.h"
 
 #include "display.hpp"
 
@@ -60,6 +63,20 @@ static bool backlight_enabled = false;
 
 static void *alloc_display_buffer() {
   return new uint16_t[DISPLAY_WIDTH * DISPLAY_HEIGHT];
+}
+
+static bool on_bounce_empty_1x(esp_lcd_panel_handle_t panel, void *bounce_buf, int pos_px, int len_bytes, void *user_ctx) {
+
+  auto in = display_buffers[buf_index ^ 1] + pos_px;
+
+  memcpy(bounce_buf, in, len_bytes);
+
+  // preload next (this is mimicking what the default code does)
+#if CONFIG_IDF_TARGET_ESP32P4
+    Cache_Start_L2_Cache_Preload(uint32_t(in + len_bytes / sizeof(uint16_t)), len_bytes, 0);
+#endif
+
+  return false;
 }
 
 static bool on_bounce_empty_2x(esp_lcd_panel_handle_t panel, void *bounce_buf, int pos_px, int len_bytes, void *user_ctx) {
@@ -144,10 +161,17 @@ static bool on_frame_buf_complete(esp_lcd_panel_handle_t panel, const esp_lcd_rg
 }
 
 static void init_callbacks(int scale) {
+  auto on_bounce_empty = on_bounce_empty_1x;
+
+  if(scale == 2)
+    on_bounce_empty = on_bounce_empty_2x;
+  else if(scale == 4)
+    on_bounce_empty = on_bounce_empty_4x;
+
   esp_lcd_rgb_panel_event_callbacks_t callbacks = {
     .on_color_trans_done = nullptr,
     .on_vsync = nullptr,
-    .on_bounce_empty = scale == 2 ? on_bounce_empty_2x : on_bounce_empty_4x,
+    .on_bounce_empty = on_bounce_empty,
     .on_frame_buf_complete = on_frame_buf_complete,
   };
   ESP_ERROR_CHECK(esp_lcd_rgb_panel_register_event_callbacks(panel_handle, &callbacks, nullptr));
