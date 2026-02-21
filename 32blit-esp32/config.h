@@ -16,3 +16,11 @@
 #ifndef LCD_RESET_PIN
 #define LCD_RESET_PIN -1
 #endif
+
+#ifndef LCD_DE_PIN
+#define LCD_DE_PIN -1
+#endif
+
+#ifndef LCD_CLOCK_PIN
+#define LCD_CLOCK_PIN -1
+#endif
