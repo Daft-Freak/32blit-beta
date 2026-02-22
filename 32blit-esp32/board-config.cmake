@@ -54,5 +54,9 @@ endif()
 
 # driver dependencies
 if(BLIT_AUDIO_DRIVER STREQUAL "i2s")
-    list(APPEND BLIT_BOARD_LIBRARIES idf::esp_driver_i2s)
+    list(APPEND BLIT_BOARD_LIBRARIES idf::esp_driver_i2s idf::esp_driver_gpio)
+endif()
+
+if(BLIT_STORAGE_DRIVER STREQUAL "sd")
+    list(APPEND BLIT_BOARD_LIBRARIES idf::esp_driver_i2s idf::esp_driver_sdmmc idf::esp_driver_sdspi)
 endif()
