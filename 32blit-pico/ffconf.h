@@ -301,6 +301,8 @@
 /  SemaphoreHandle_t and etc. A header file for O/S definitions needs to be
 /  included somewhere in the scope of ff.h. */
 
+/* custom buffer alignment */
+#define FF_BUF_ALIGN
 
 
 /*--- End of configuration options ---*/
