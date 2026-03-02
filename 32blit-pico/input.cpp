@@ -8,6 +8,7 @@ extern const InputDriver gbacart_input_driver;
 extern const InputDriver gpio_input_driver;
 extern const InputDriver seesaw_input_driver;
 extern const InputDriver tca9555_driver;
+extern const InputDriver unnamed_pad_input_driver;
 extern const InputDriver usb_hid_driver;
 
 static const InputDriver *input_drivers[] {
@@ -22,6 +23,9 @@ static const InputDriver *input_drivers[] {
 #endif
 #ifdef BLIT_INPUT_TCA9555
   &tca9555_driver,
+#endif
+#ifdef BLIT_INPUT_UNNAMED_PAD
+  &unnamed_pad_input_driver,
 #endif
 #ifdef BLIT_INPUT_USB_HID
   &usb_hid_driver,

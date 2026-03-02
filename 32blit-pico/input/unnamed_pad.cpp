@@ -47,10 +47,10 @@
 // 5/6 are spare (or should be, but 5 is hacked to LED R)
 #define BUTTON_STICK_IO  7
 
-void init_input() {
+void init_upad_input() {
 }
 
-void update_input() {
+void update_upad_input(uint32_t &new_buttons, blit::Vec2 &new_joystick) {
   uint8_t data[4];
   i2c_read_blocking(i2c_default, I2C_ADDR, data, 4, false);
 
@@ -84,14 +84,12 @@ void update_input() {
 
 #ifdef ROTATE_STICK
   // this looks like the non-rotated one, but we're assuming horizontal layout by default...
-  blit::api_data.joystick.x =  scale_joystick(raw_adc[0]);
-  blit::api_data.joystick.y =  scale_joystick(raw_adc[1]);
+  new_joystick.x =  scale_joystick(raw_adc[0]);
+  new_joystick.y =  scale_joystick(raw_adc[1]);
 #else
-  blit::api_data.joystick.x =  scale_joystick(raw_adc[1]);
-  blit::api_data.joystick.y = -scale_joystick(raw_adc[0]);
+  new_joystick.x =  scale_joystick(raw_adc[1]);
+  new_joystick.y = -scale_joystick(raw_adc[0]);
 #endif
-
-  uint32_t new_buttons = 0;
 
   if(!(raw_buttons & (1 << BUTTON_A_IO)))
     new_buttons |= blit::Button::A;
@@ -133,6 +131,8 @@ void update_input() {
   if(raw_adc[2] == 0)
     new_buttons |= blit::Button::MENU;
 #endif
-
-  blit::api_data.buttons = new_buttons;
 }
+
+extern const InputDriver unnamed_pad_input_driver {
+  init_upad_input, update_upad_input
+};
