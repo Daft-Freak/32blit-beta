@@ -5,12 +5,16 @@
 #include "engine/api_private.hpp"
 
 extern const InputDriver gpio_input_driver;
+extern const InputDriver seesaw_input_driver;
 extern const InputDriver tca9555_driver;
 extern const InputDriver usb_hid_driver;
 
 static const InputDriver *input_drivers[] {
 #ifdef BLIT_INPUT_GPIO
   &gpio_input_driver,
+#endif
+#ifdef BLIT_INPUT_SEESAW
+  &seesaw_input_driver,
 #endif
 #ifdef BLIT_INPUT_TCA9555
   &tca9555_driver,

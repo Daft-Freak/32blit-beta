@@ -209,7 +209,7 @@ static void seesaw_alarm_callback(uint alarm_num) {
   }
 }
 
-void init_input() {
+void init_seesaw_input() {
   // state
   for(auto &gpio : gpioState)
     gpio = ~0;
@@ -253,10 +253,8 @@ void init_input() {
   seesaw_alarm_callback(alarm_num);
 }
 
-void update_input() {
+void update_seesaw_input(uint32_t &new_buttons, blit::Vec2 &new_joystick) {
   uint32_t gpio = __builtin_bswap32(gpioState[0]);
-
-  uint32_t new_buttons = 0;
 
 #if SEESAW_COUNT == 1
   if(!(gpio & (1 << SEESAW_A_IO)))
@@ -332,15 +330,13 @@ void update_input() {
     new_buttons |= blit::Button::DPAD_DOWN;
 
 #elif SEESAW_COUNT == 2
-  blit::api_data.joystick.x = (1023 - __builtin_bswap16(analogYState[0])) / 512.0f - 1.0f;
-  blit::api_data.joystick.y = (1023 - __builtin_bswap16(analogXState[0])) / 512.0f - 1.0f;
+  new_joystick.x = (1023 - __builtin_bswap16(analogYState[0])) / 512.0f - 1.0f;
+  new_joystick.y = (1023 - __builtin_bswap16(analogXState[0])) / 512.0f - 1.0f;
 #else
   // joystick
-  blit::api_data.joystick.x = (1023 - __builtin_bswap16(analogXState[0])) / 512.0f - 1.0f;
-  blit::api_data.joystick.y = __builtin_bswap16(analogYState[0]) / 512.0f - 1.0f;
+  new_joystick.x = (1023 - __builtin_bswap16(analogXState[0])) / 512.0f - 1.0f;
+  new_joystick.y = __builtin_bswap16(analogYState[0]) / 512.0f - 1.0f;
 #endif
-
-  blit::api_data.buttons = new_buttons;
 
   // start new read cycle
   if(state == SeesawState::Done) {
@@ -348,3 +344,7 @@ void update_input() {
     seesaw_alarm_callback(alarm_num);
   }
 }
+
+extern const InputDriver seesaw_input_driver {
+  init_seesaw_input, update_seesaw_input
+};
