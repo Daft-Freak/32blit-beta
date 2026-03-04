@@ -61,16 +61,18 @@ bool set_screen_mode_format(ScreenMode new_mode, SurfaceTemplate &new_surf_templ
 
   int min_buffers = 1;
 
+#ifdef BUILD_LOADER
+  Size clamp_bounds = max_fb_bounds;
+#endif
+
   switch(new_mode) {
     case ScreenMode::lores:
       if(new_surf_template.bounds.empty())
         new_surf_template.bounds = lores_screen_size;
       else
         new_surf_template.bounds /= 2;
-
 #ifdef BUILD_LOADER
-      if(new_surf_template.bounds.w > max_fb_bounds.w / 2)
-        new_surf_template.bounds.w = max_fb_bounds.w / 2;
+      clamp_bounds /= 2;
 #endif
       min_buffers = 2;
       break;
@@ -79,12 +81,15 @@ bool set_screen_mode_format(ScreenMode new_mode, SurfaceTemplate &new_surf_templ
       if(new_surf_template.bounds.empty())
         new_surf_template.bounds = hires_screen_size;
 
-#ifdef BUILD_LOADER
-      if(new_surf_template.bounds.w > max_fb_bounds.w)
-        new_surf_template.bounds.w = max_fb_bounds.w;
-#endif
       break;
   }
+
+#ifdef BUILD_LOADER
+  if(new_surf_template.bounds.w > clamp_bounds.w)
+    new_surf_template.bounds.w = clamp_bounds.w;
+  if(new_surf_template.bounds.h > clamp_bounds.h)
+    new_surf_template.bounds.h = clamp_bounds.h;
+#endif
 
   // check the framebuffer is large enough for mode
   auto fb_size = uint32_t(new_surf_template.bounds.area()) * pixel_format_stride[int(new_surf_template.format)];
