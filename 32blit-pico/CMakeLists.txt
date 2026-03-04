@@ -24,7 +24,7 @@ target_sources(BlitHalPico INTERFACE
 )
 
 target_link_libraries(BlitHalPico INTERFACE
-    hardware_dma hardware_i2c hardware_pio hardware_pwm hardware_spi
+    hardware_adc hardware_dma hardware_i2c hardware_pio hardware_pwm hardware_spi
     pico_multicore pico_stdlib pico_unique_id pico_rand
     tinyusb_device
     FatFsBlitAPI

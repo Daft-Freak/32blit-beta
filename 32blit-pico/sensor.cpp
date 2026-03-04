@@ -4,11 +4,15 @@
 
 #include "engine/api_private.hpp"
 
+extern SensorDriver battery_adc_driver;
 extern SensorDriver bme280_driver;
 extern SensorDriver lsm6ds3tr_c_driver;
 extern SensorDriver ltr_559als_driver;
 
 static SensorDriver *sensor_drivers[] {
+#ifdef BLIT_SENSOR_BATTERY_ADC
+  &battery_adc_driver,
+#endif
 #ifdef BLIT_SENSOR_BME280
   &bme280_driver,
 #endif
