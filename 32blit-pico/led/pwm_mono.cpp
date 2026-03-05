@@ -37,8 +37,10 @@ void update_led() {
 
   const float gamma = 2.8;
 
-  float avg = float(api_data.LED.r + api_data.LED.g + api_data.LED.b) / 3.0f;
-  uint16_t value = (uint16_t)(std::pow(avg / 255.0f, gamma) * 65535.0f + 0.5f);
+  float lum = float(api_data.LED.r) * 0.2126f
+            + float(api_data.LED.g) * 0.7152f
+            + float(api_data.LED.b) * 0.0722f;
+  uint16_t value = (uint16_t)(std::pow(lum / 255.0f, gamma) * 65535.0f + 0.5f);
 
   for(auto &pin : led_pins)
     pwm_set_gpio_level(pin, value);
