@@ -105,6 +105,6 @@ static void update_ltr_559(uint32_t time) {
   }
 }
 
-SensorDriver ltr_559als_driver {
+extern const SensorDriver ltr_559als_driver {
   init_ltr_559, update_ltr_559
 };

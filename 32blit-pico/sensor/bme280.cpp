@@ -166,6 +166,6 @@ static void update_bme280(uint32_t time) {
   hum_data.data = bme280_compensate_H_int32(raw_humidity) / 1024.0f;
 }
 
-SensorDriver bme280_driver {
+extern const SensorDriver bme280_driver {
   init_bme280, update_bme280
 };

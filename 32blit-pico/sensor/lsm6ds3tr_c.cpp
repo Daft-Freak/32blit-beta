@@ -103,6 +103,6 @@ static void update_lsm6ds3(uint32_t time) {
   }
 }
 
-SensorDriver lsm6ds3tr_c_driver {
+extern const SensorDriver lsm6ds3tr_c_driver {
   init_lsm6ds3, update_lsm6ds3
 };

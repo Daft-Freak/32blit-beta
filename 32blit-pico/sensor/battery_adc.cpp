@@ -22,6 +22,6 @@ static void update_battery_adc(uint32_t time) {
   batt_data.data = (float(raw) * 3.3f * BATTERY_ADC_SCALE) / 4095.0f;
 }
 
-SensorDriver battery_adc_driver {
+extern const SensorDriver battery_adc_driver {
   init_battery_adc, update_battery_adc
 };
