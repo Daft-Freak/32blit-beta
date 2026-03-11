@@ -61,6 +61,12 @@ void init_audio() {
   gpio_set_slew_rate(PICO_AUDIO_PWM_MONO_PIN, GPIO_SLEW_RATE_FAST);
 
   audio_pool = producer_pool;
+
+#ifdef AUDIO_PWM_AMP_ENABLE_PIN
+  gpio_set_dir(AUDIO_PWM_AMP_ENABLE_PIN, GPIO_OUT);
+  gpio_put(AUDIO_PWM_AMP_ENABLE_PIN, 1);
+  gpio_set_function(AUDIO_PWM_AMP_ENABLE_PIN, GPIO_FUNC_SIO);
+#endif
 }
 
 void update_audio(uint32_t time) {
