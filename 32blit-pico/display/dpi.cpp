@@ -430,6 +430,12 @@ void init_display() {
   int num_sync_pins = 2; // h/v sync
   const int num_data_pins = 16; // assume 16-bit/565
 
+  // setup PIO
+#if (DPI_DATA_PIN_BASE + 16) >= 32 || (DPI_SYNC_PIN_BASE + 1) >= 32
+  static_assert(DPI_DATA_PIN_BASE >= 16 && DPI_SYNC_PIN_BASE >= 16);
+  pio_set_gpio_base(pio, 16);
+#endif
+
   int pio_offset = pio_add_program(pio, &dpi_timing_program);
 
   // allocate data first so unassigned clock pin doesn't cause problems
