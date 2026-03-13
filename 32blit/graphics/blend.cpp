@@ -26,6 +26,11 @@ namespace blit {
     return d + ((a * (s - d) + 127) >> 8);
   }
 
+  // pre-multiplied `d`
+  __attribute__((always_inline)) inline uint8_t blend_pre(uint8_t s, uint8_t d, uint8_t a) {
+    return d + ((s * a + 127) >> 8);
+  }
+
   __attribute__((always_inline)) inline void blend_rgba_rgb(const Pen *s, uint8_t *d, uint8_t a, uint32_t c) {
     if (c == 1) {
       // fast case for single pixel draw
@@ -146,22 +151,41 @@ namespace blit {
     b = (rgb565 >> 11) & 0x1F; b = b << 3;
   }
 
+  __attribute__((always_inline)) inline uint16_t pack_rgb565_unshifted(uint8_t r, uint8_t g, uint8_t b) {
+    return r | (g << 5) | (b << 11);
+  }
+
+  __attribute__((always_inline)) inline void unpack_rgb565_unshifted(uint16_t rgb565, uint8_t &r, uint8_t &g, uint8_t &b) {
+    r =  rgb565        & 0x1F;
+    g = (rgb565 >>  5) & 0x3F;
+    b = (rgb565 >> 11) & 0x1F;
+  }
+
   __attribute__((always_inline)) inline void blend_rgba_rgb565(const Pen *s, uint8_t *d, uint8_t a, uint32_t c) {
     auto *d16 = (uint16_t *)d;
     uint8_t r, g, b;
 
+    uint8_t s_r = s->r, s_g = s->g, s_b = s->b;
+
     if (c == 1) {
       // fast case for single pixel draw
       unpack_rgb565(*d16, r, g, b);
-      *d16 = pack_rgb565(blend(s->r, r, a), blend(s->g, g, a), blend(s->b, b, a));
+      *d16 = pack_rgb565(blend(s_r, r, a), blend(s_g, g, a), blend(s_b, b, a));
       return;
     }
+
+    // pre-multiply pen and shift down
+    s_r = (s_r * a + 127) >> (8 + 3);
+    s_g = (s_g * a + 127) >> (8 + 2);
+    s_b = (s_b * a + 127) >> (8 + 3);
+
+    a = 255 - a;
 
     // align
     auto de = d16 + c;
     if (uintptr_t(d) & 0b10) {
-      unpack_rgb565(*d16, r, g, b);
-      *d16++ = pack_rgb565(blend(s->r, r, a), blend(s->g, g, a), blend(s->b, b, a));
+      unpack_rgb565_unshifted(*d16, r, g, b);
+      *d16++ = pack_rgb565_unshifted(blend_pre(r, s_r, a), blend_pre(g, s_g, a), blend_pre(b, s_b, a));
     }
 
     // destination is now aligned
@@ -172,18 +196,18 @@ namespace blit {
     while (c32--) {
       uint8_t r2, g2, b2;
 
-      unpack_rgb565(*d32, r, g, b);
-      unpack_rgb565(*d32 >> 16, r2, g2, b2);
+      unpack_rgb565_unshifted(*d32, r, g, b);
+      unpack_rgb565_unshifted(*d32 >> 16, r2, g2, b2);
 
-      *d32++ = pack_rgb565(blend(s->r, r, a), blend(s->g, g, a), blend(s->b, b, a))
-             | pack_rgb565(blend(s->r, r2, a), blend(s->g, g2, a), blend(s->b, b2, a)) << 16;
+      *d32++ = pack_rgb565_unshifted(blend_pre(r, s_r, a), blend_pre(g, s_g, a), blend_pre(b, s_b, a))
+             | pack_rgb565_unshifted(blend_pre(r2, s_r, a), blend_pre(g2, s_g, a), blend_pre(b2, s_b, a)) << 16;
     }
 
     // copy the trailing bytes as needed
     d16 = (uint16_t*)d32;
     if (d16 < de) {
-      unpack_rgb565(*d16, r, g, b);
-      *d16 = pack_rgb565(blend(s->r, r, a), blend(s->g, g, a), blend(s->b, b, a));
+      unpack_rgb565_unshifted(*d16, r, g, b);
+      *d16++ = pack_rgb565_unshifted(blend_pre(r, s_r, a), blend_pre(g, s_g, a), blend_pre(b, s_b, a));
     }
   }
 
