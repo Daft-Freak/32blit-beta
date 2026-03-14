@@ -1,6 +1,8 @@
 #include <algorithm>
+#include <cmath>
 #include <cstdio>
 
+#include "hardware/clocks.h"
 #include "hardware/dma.h"
 #include "hardware/pio.h"
 #include "pico/binary_info.h"
@@ -522,17 +524,11 @@ bool storage_init() {
       high_speed = true;
   }
 
-#ifdef OVERCLOCK_250
-  if(high_speed)
-    set_clkdiv(3); // 41.6...
-  else
-    set_clkdiv(5); // 25
-#else
-  if(high_speed)
-    set_clkdiv(2); // 31.25
-  else
-    set_clkdiv(3); // 20.83...
-#endif
+  // set clkdiv
+  int clkdiv = std::ceil(clock_get_hz(clk_sys) / (25000000.0f * 2.0f));
+  int clkdiv_high_speed = std::ceil(clock_get_hz(clk_sys) / (50000000.0f * 2.0f));
+
+  set_clkdiv(high_speed ? clkdiv_high_speed : clkdiv);
 
   return true;
 }
