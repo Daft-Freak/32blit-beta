@@ -14,6 +14,23 @@
 
 #include "sd_card.pio.h"
 
+// default config reusing SPI pins
+#ifndef SD_CLK
+#define SD_CLK SD_SCK
+#endif
+
+#ifndef SD_CMD
+#define SD_CMD SD_MOSI
+#endif
+
+#ifndef SD_DAT0
+#define SD_DAT0 SD_MISO
+#endif
+
+#ifndef SD_MAX_WIDTH
+#define SD_MAX_WIDTH 1
+#endif
+
 #define SD_TIMEOUT 100
 
 #define SD_MAX_READ_BLOCKS 32
@@ -322,8 +339,9 @@ static bool sd_command_write_block(uint8_t cmd, uint32_t addr, uint8_t *buffer) 
 }
 
 static void sd_set_width(uint8_t width) {
-  if(data_width == width)
-    return;
+  // TODO: causes a lot of hangs, but apparently worked at some point?
+  //if(data_width == width)
+  //  return;
 
   // ACMD6
   uint8_t res_data[8];
@@ -388,7 +406,7 @@ void sd_init_io() {
   pio_gpio_init(sd_pio, SD_CMD);
   pio_gpio_init(sd_pio, SD_CLK);
 
-  for(int i = 0; i < 4; i++) {
+  for(int i = 0; i < SD_MAX_WIDTH; i++) {
     pio_gpio_init(sd_pio, SD_DAT0 + i);
     gpio_pull_up(SD_DAT0 + i);
   }
@@ -554,7 +572,7 @@ int32_t storage_read(uint32_t block, uint32_t offset, void *buffer, uint32_t siz
 
   auto blocks = size_bytes / 512;
 
-  sd_set_width(4);
+  sd_set_width(SD_MAX_WIDTH);
 
   if(blocks == 1) {
     if(!sd_command_read_block(17, block, (uint8_t *)buffer)) // READ_SINGLE_BLOCK
