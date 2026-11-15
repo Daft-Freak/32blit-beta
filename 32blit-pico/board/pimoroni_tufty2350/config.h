@@ -2,10 +2,23 @@
 
 #define BUTTON_UP_PIN   11
 #define BUTTON_DOWN_PIN  6
-#define BUTTON_A_PIN     7
-#define BUTTON_B_PIN     9
-#define BUTTON_X_PIN    10 // C
+#define TUFTY_BUTTON_A_PIN     7
+#define TUFTY_BUTTON_B_PIN     9
+#define TUFTY_BUTTON_C_PIN    10
 #define BUTTON_HOME_PIN 22
+
+
+#ifdef TUFTY_BUTTONS_LEFT_RIGHT
+// map the lower three buttons as left, A, right
+#define BUTTON_LEFT_PIN  TUFTY_BUTTON_A_PIN
+#define BUTTON_A_PIN     TUFTY_BUTTON_B_PIN
+#define BUTTON_RIGHT_PIN TUFTY_BUTTON_C_PIN
+#else
+// map the lower three buttons as A, B, X
+#define BUTTON_A_PIN TUFTY_BUTTON_A_PIN
+#define BUTTON_B_PIN TUFTY_BUTTON_B_PIN
+#define BUTTON_X_PIN TUFTY_BUTTON_C_PIN
+#endif
 
 #define DISPLAY_ST7789
 
