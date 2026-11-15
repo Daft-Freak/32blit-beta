@@ -63,7 +63,16 @@ function(blit_executable NAME)
             target_compile_definitions(${NAME} PRIVATE PICO_STDIO_USB_ENABLE_RESET_VIA_BAUD_RATE=1 PICO_STDIO_USB_RESET_MAGIC_BAUD_RATE=1200 PICO_STDIO_USB_RESET_BOOTSEL_INTERFACE_DISABLE_MASK=0)
         endif()
 
-        target_compile_definitions(${NAME} PRIVATE BLIT_PICO_STANDALONE=1 PICO_EMBED_XIP_SETUP=1)
+        target_compile_definitions(${NAME} PRIVATE BLIT_PICO_STANDALONE=1)
+
+        if(PICO_IN_PSRAM)
+            # override flash include to use PSRAM instead of flash
+            pico_add_linker_script_override_path(${NAME} ${HAL_DIR}/linker_in_psram FILES default_text_excludes.incl memory_flash.incl)
+            target_compile_definitions(${NAME} PRIVATE PICO_RUNTIME_SKIP_INIT_BOOTROM_RESET=1 PICO_RUNTIME_SKIP_INIT_EARLY_RESETS=1)
+        else()
+            target_compile_definitions(${NAME} PRIVATE PICO_EMBED_XIP_SETUP=1)
+        endif()
+
         target_link_libraries(${NAME} BlitHalPico)
 
         pico_add_extra_outputs(${NAME})
