@@ -37,6 +37,11 @@
 
 #define DEFAULT_I2C_CLOCK 400000
 
+#ifdef TUFTY_MATCH_PY_FS
+#define FLASH_STORAGE_OFFSET (3 * 1024 * 1024)
+#define FLASH_STORAGE_SIZE (13 * 1024 * 1024)
+#endif
+
 #define LED_MONO_PINS 0, 1, 2, 3
 
 #define USB_VENDOR_ID 0x2E8A
