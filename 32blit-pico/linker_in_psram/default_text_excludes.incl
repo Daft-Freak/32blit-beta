@@ -1,0 +1,1 @@
+*(EXCLUDE_FILE(*libgcc.a: *libm.a: *clocks.c.o* *pll.c.o*) .text*)
